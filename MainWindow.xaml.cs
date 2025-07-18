@@ -19,25 +19,42 @@ namespace Audio_visual_app {
             InitializeComponent();
         }
 
+        // Audio variables
         static WaveOutEvent? outputDevice;
         static AudioFileReader? audioFile;
         string filename;
 
-        static void OnPlaybackStopped(object? sender, StoppedEventArgs args)
-        {
-            if (outputDevice != null)
-            {
+        /// <summary>
+        /// When playback stops
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        static void OnPlaybackStopped(object? sender, StoppedEventArgs args){
+            if (outputDevice != null){
                 outputDevice.Dispose();
                 outputDevice = null;
             }
 
-            if (audioFile != null)
-            {
+            if (audioFile != null){
                 audioFile.Dispose();
                 audioFile = null;
             }
         }
 
+        /// <summary>
+        /// Get current time of song
+        /// </summary>
+        /// <param name="af"></param>
+        /// <returns></returns>
+        private double get_time(AudioFileReader af) {
+            return af.CurrentTime / af.TotalTime;
+        }
+
+        /// <summary>
+        /// When the button is clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Button_Click(object sender, RoutedEventArgs e){
             Console.WriteLine("Selecting file...");
 
@@ -55,26 +72,30 @@ namespace Audio_visual_app {
             }
 
             // Play file via NAudio
-            if (outputDevice == null)
-            {
+            if (outputDevice == null){
                 outputDevice = new WaveOutEvent();
                 outputDevice.PlaybackStopped += OnPlaybackStopped;
             }
 
-            if (audioFile == null)
-            {
+            if (audioFile == null){
                 audioFile = new AudioFileReader(filename);
                 outputDevice.Init(audioFile);
             }
 
+            // Play audio
             outputDevice.Play();
 
-            Console.WriteLine(audioFile.CurrentTime / audioFile.TotalTime + "%");
+            // Get current time
+            get_time(audioFile);
 
             // Store PCM Data
             WaveStream ws = new Mp3FileReader(filename);
             WaveStream pcm = WaveFormatConversionStream.CreatePcmStream(ws);
             int interval = pcm.WaveFormat.Channels * pcm.WaveFormat.SampleRate * pcm.WaveFormat.BitsPerSample / 8;
+        }
+
+        private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
+
         }
     }
 }

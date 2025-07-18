@@ -27,3 +27,4 @@ D:\Audio-visual-app\obj\Debug\net9.0-windows\refint\Audio-visual-app.dll
 D:\Audio-visual-app\obj\Debug\net9.0-windows\Audio-visual-app.pdb
 D:\Audio-visual-app\obj\Debug\net9.0-windows\Audio-visual-app.genruntimeconfig.cache
 D:\Audio-visual-app\obj\Debug\net9.0-windows\ref\Audio-visual-app.dll
+D:\Audio-visual-app\obj\Debug\net9.0-windows\Audio-visual-app.sourcelink.json
