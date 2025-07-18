@@ -2,5 +2,5 @@
 An app for analysing audio files.
 
 # DEPENDENCIES
-- [Visual Studio Code](https://code.visualstudio.com/) [.NET (9.0.7)](https://code.visualstudio.com/docs/languages/dotnet)
+- [Visual Studio .NET (8.0.0)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/get-started/create-app-visual-studio)
 - [NAudio](https://github.com/naudio/NAudio)
