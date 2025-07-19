@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "GF5EO6/vbYY=",
+  "dgSpecHash": "/HSA16O8jUc=",
   "success": true,
-  "projectFilePath": "D:\\Audio-visual-app\\Audio-visual-app.csproj",
+  "projectFilePath": "C:\\Users\\mydre\\OneDrive\\Documents\\Audio-visual-app\\Audio-visual-app.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\mydre\\.nuget\\packages\\microsoft.netcore.platforms\\3.1.0\\microsoft.netcore.platforms.3.1.0.nupkg.sha512",
     "C:\\Users\\mydre\\.nuget\\packages\\microsoft.win32.registry\\4.7.0\\microsoft.win32.registry.4.7.0.nupkg.sha512",

@@ -261,8 +261,11 @@
         </Style>
     </Window.Resources>
     <Grid>
-        <Button Content="File" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Click="Button_Click" Width="100"/>
-        <Slider Style="{DynamicResource SliderStyle1}" IsMoveToPointEnabled="True" HorizontalAlignment="Center" Margin="0,35,0,0" VerticalAlignment="Top" Width="780" ValueChanged="Slider_ValueChanged"/>
-
+        <Button Content="File" HorizontalAlignment="Left" VerticalAlignment="Top" Click="Button_Click" Width="100" Margin="107,53,0,0"/>
+        <Slider Style="{DynamicResource SliderStyle1}" IsMoveToPointEnabled="True" HorizontalAlignment="Center" Margin="0,30,0,0" VerticalAlignment="Top" Width="586" ValueChanged="Slider_ValueChanged"/>
+        <Label Name="label1" Content="Label" HorizontalAlignment="Left" Margin="693,26,0,0" VerticalAlignment="Top" AutomationProperties.Name="lbl"/>
+        <Button Content="Stop" HorizontalAlignment="Left" Margin="108,78,0,0" VerticalAlignment="Top" Click="Button_Click_2"/>
+        <Button Content="Play" HorizontalAlignment="Left" Margin="141,78,0,0" VerticalAlignment="Top" Click="Button_Click_1"/>
+        <Button Content="Pause" HorizontalAlignment="Left" Margin="172,78,0,0" VerticalAlignment="Top" Click="Button_Click_3"/>
     </Grid>
 </Window>

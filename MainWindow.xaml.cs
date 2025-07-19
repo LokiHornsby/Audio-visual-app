@@ -23,13 +23,14 @@ namespace Audio_visual_app {
         static WaveOutEvent? outputDevice;
         static AudioFileReader? audioFile;
         string filename;
+        private bool playing = false;
 
         /// <summary>
         /// When playback stops
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        static void OnPlaybackStopped(object? sender, StoppedEventArgs args){
+       void OnPlaybackStopped(object? sender, StoppedEventArgs args){
             if (outputDevice != null){
                 outputDevice.Dispose();
                 outputDevice = null;
@@ -39,6 +40,8 @@ namespace Audio_visual_app {
                 audioFile.Dispose();
                 audioFile = null;
             }
+
+            playing = false;
         }
 
         /// <summary>
@@ -46,7 +49,7 @@ namespace Audio_visual_app {
         /// </summary>
         /// <param name="af"></param>
         /// <returns></returns>
-        private double get_time(AudioFileReader af) {
+        public static double get_time(AudioFileReader af) {
             return af.CurrentTime / af.TotalTime;
         }
 
@@ -69,33 +72,55 @@ namespace Audio_visual_app {
             if (result == true) {
                 // Open document
                 filename = dialog.FileName;
+
+                // Play file via NAudio
+                if (outputDevice == null) {
+                    outputDevice = new WaveOutEvent();
+                    outputDevice.PlaybackStopped += OnPlaybackStopped;
+                }
+
+                if (audioFile == null) {
+                    audioFile = new AudioFileReader(filename);
+                    outputDevice.Init(audioFile);
+                }
+
+                // Store PCM Data
+                //WaveStream ws = new Mp3FileReader(filename);
+                //WaveStream pcm = WaveFormatConversionStream.CreatePcmStream(ws);
+                //int interval = pcm.WaveFormat.Channels * pcm.WaveFormat.SampleRate * pcm.WaveFormat.BitsPerSample / 8;
+
+                // Start a timer
+                System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+                dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+                dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
+                dispatcherTimer.Start();
             }
-
-            // Play file via NAudio
-            if (outputDevice == null){
-                outputDevice = new WaveOutEvent();
-                outputDevice.PlaybackStopped += OnPlaybackStopped;
+        }
+        
+        private void dispatcherTimer_Tick(object sender, EventArgs e) {
+            if (playing) {
+                label1.Content = Math.Round(get_time(audioFile)*100)+"%";
             }
-
-            if (audioFile == null){
-                audioFile = new AudioFileReader(filename);
-                outputDevice.Init(audioFile);
-            }
-
-            // Play audio
-            outputDevice.Play();
-
-            // Get current time
-            get_time(audioFile);
-
-            // Store PCM Data
-            WaveStream ws = new Mp3FileReader(filename);
-            WaveStream pcm = WaveFormatConversionStream.CreatePcmStream(ws);
-            int interval = pcm.WaveFormat.Channels * pcm.WaveFormat.SampleRate * pcm.WaveFormat.BitsPerSample / 8;
         }
 
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
 
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e) {
+            // Play audio
+            outputDevice.Play();
+            playing = true;
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e) {
+            outputDevice.Stop();
+            playing = false;
+        }
+
+        private void Button_Click_3(object sender, RoutedEventArgs e) {
+            outputDevice.Pause();
+            playing = false;
         }
     }
 }

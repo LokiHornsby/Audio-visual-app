@@ -1,14 +1,14 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\Audio-visual-app\\",
+  "WorkspaceRootPath": "C:\\Users\\mydre\\OneDrive\\Documents\\Audio-visual-app\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|d:\\audio-visual-app\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|solutionrelative:mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|c:\\users\\mydre\\onedrive\\documents\\audio-visual-app\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|solutionrelative:mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|d:\\audio-visual-app\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|solutionrelative:mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|c:\\users\\mydre\\onedrive\\documents\\audio-visual-app\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|solutionrelative:mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,33 +18,29 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 0,
           "Children": [
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{26341fe2-71dd-46fd-bb1b-2e51a92a0d64}"
-            },
-            {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "MainWindow.xaml",
-              "DocumentMoniker": "D:\\Audio-visual-app\\MainWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\mydre\\OneDrive\\Documents\\Audio-visual-app\\MainWindow.xaml",
               "RelativeDocumentMoniker": "MainWindow.xaml",
-              "ToolTip": "D:\\Audio-visual-app\\MainWindow.xaml",
-              "RelativeToolTip": "MainWindow.xaml",
+              "ToolTip": "C:\\Users\\mydre\\OneDrive\\Documents\\Audio-visual-app\\MainWindow.xaml*",
+              "RelativeToolTip": "MainWindow.xaml*",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2025-07-18T17:38:57.796Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "MainWindow.xaml.cs",
-              "DocumentMoniker": "D:\\Audio-visual-app\\MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\mydre\\OneDrive\\Documents\\Audio-visual-app\\MainWindow.xaml.cs",
               "RelativeDocumentMoniker": "MainWindow.xaml.cs",
-              "ToolTip": "D:\\Audio-visual-app\\MainWindow.xaml.cs*",
-              "RelativeToolTip": "MainWindow.xaml.cs*",
-              "ViewState": "AgIAAFMAAAAAAAAAAAAuwGEAAAAAAAAAAAAAAA==",
+              "ToolTip": "C:\\Users\\mydre\\OneDrive\\Documents\\Audio-visual-app\\MainWindow.xaml.cs",
+              "RelativeToolTip": "MainWindow.xaml.cs",
+              "ViewState": "AgIAAGgAAAAAAAAAAAAtwHYAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-18T17:38:47.842Z",
               "EditorCaption": ""
