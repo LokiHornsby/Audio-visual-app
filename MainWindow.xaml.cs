@@ -13,27 +13,30 @@ using System.Windows.Threading;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace Audio_visual_app {
+    using static LAVT;
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window {
-        // Audio variables
-        static WaveOutEvent? outputDevice;
-        static AudioFileReader? audioFile;
-
         string? filename;
-        double hours = 0;
-        double minutes = 0;
-        double seconds = 0;
-
-        private bool playing = false;
-        DispatcherTimer? dispatcherTimer;
+        static DispatcherTimer? dispatcherTimer;
 
         public MainWindow(){
             InitializeComponent();
 
             filename = selectfile();
-            if (filename != null) { initialise();  }
+            if (filename != null) { initialiseNAudio(filename); }
+
+            // Start a timer
+            dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+            dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0, 1);
+            dispatcherTimer.Start();
+
+            // set slider
+            slider1.Maximum = GetTotalTime().TotalSeconds;
+            slider1.IsMoveToPointEnabled = true;
         }
 
         string? selectfile() {
@@ -49,30 +52,6 @@ namespace Audio_visual_app {
             return dialog.FileName;
         }
 
-        void initialise() {
-            // Store PCM Data
-            //WaveStream ws = new Mp3FileReader(filename);
-            //WaveStream pcm = WaveFormatConversionStream.CreatePcmStream(ws);
-            //int interval = pcm.WaveFormat.Channels * pcm.WaveFormat.SampleRate * pcm.WaveFormat.BitsPerSample / 8;
-
-            // Start a timer
-            dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
-            dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0, 1);
-            dispatcherTimer.Start();
-
-            // initialise audio variables
-            outputDevice = new WaveOutEvent();
-            outputDevice.PlaybackStopped += OnPlaybackStopped;
-            
-            audioFile = new AudioFileReader(filename);
-            outputDevice.Init(audioFile);
-
-            // set slider
-            slider1.Maximum = audioFile.TotalTime.TotalSeconds;
-            slider1.IsMoveToPointEnabled = true;
-        }
-
         /// <summary>
         /// When playback stops
         /// </summary>
@@ -84,48 +63,51 @@ namespace Audio_visual_app {
             //audioFile.Dispose();
             //audioFile = null;
 
-            playing = false;
-            audioFile.Position = 0;
             slider1.Value = 0;
         }
 
-        public TimeSpan StripMilliseconds(TimeSpan time) {
-            return new TimeSpan(time.Hours, time.Minutes, time.Seconds);
-        }
-
         private void dispatcherTimer_Tick(object sender, EventArgs e) {
-            label1.Content = StripMilliseconds(audioFile.CurrentTime);
-            System.Diagnostics.Debug.WriteLine(seconds);
-            slider1.Value = audioFile.CurrentTime.TotalSeconds;
+            label1.Content = StripMilliseconds(GetCurrentTime());
+            slider1.Value = GetCurrentTime().TotalSeconds;
         }
 
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
             Slider slider = sender as Slider;
-           
-            if (slider1.Value != audioFile.CurrentTime.TotalSeconds) {
-                //audioFile.Position = (long)slider1.Value;
-                audioFile.CurrentTime = new TimeSpan(
-                    0,
-                    0,
-                    (int)slider1.Value
-                );
+
+            if (slider1.Value != GetCurrentTime().TotalSeconds) {
+                Seek((int)slider1.Value);
             }
         }
-
+        
+        /// <summary>
+        /// Play
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Button_Click_1(object sender, RoutedEventArgs e) {
-            // Play audio
-            outputDevice.Play();
-            playing = true;
+            StartPlayback();
         }
 
+        /// <summary>
+        /// Pause
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Button_Click_2(object sender, RoutedEventArgs e) {
-            outputDevice.Stop();
-            playing = false;
+            PausePlayback();
         }
 
+        /// <summary>
+        /// Stop
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Button_Click_3(object sender, RoutedEventArgs e) {
-            outputDevice.Pause();
-            playing = false;
+            StopPlayback();
+        }
+
+        private void RadioButton_Checked(object sender, RoutedEventArgs e) {
+
         }
     }
 }
