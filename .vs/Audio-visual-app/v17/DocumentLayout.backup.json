@@ -9,10 +9,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|c:\\users\\mydre\\onedrive\\documents\\audio-visual-app\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|solutionrelative:mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|c:\\users\\mydre\\onedrive\\documents\\audio-visual-app\\mainwindow.xaml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
-      "RelativeMoniker": "D:0:0:{AC07329A-F429-4825-B238-2C4E3A3044CC}|Audio-visual-app.csproj|solutionrelative:mainwindow.xaml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
@@ -38,26 +34,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "MainWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\mydre\\OneDrive\\Documents\\Audio-visual-app\\MainWindow.xaml",
-              "RelativeDocumentMoniker": "MainWindow.xaml",
-              "ToolTip": "C:\\Users\\mydre\\OneDrive\\Documents\\Audio-visual-app\\MainWindow.xaml",
-              "RelativeToolTip": "MainWindow.xaml",
-              "ViewState": "AgIAADgAAAAAAAAAAAAAAEkAAAAKAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-07-19T14:38:31.797Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
               "Title": "MainWindow.xaml.cs",
               "DocumentMoniker": "C:\\Users\\mydre\\OneDrive\\Documents\\Audio-visual-app\\MainWindow.xaml.cs",
               "RelativeDocumentMoniker": "MainWindow.xaml.cs",
               "ToolTip": "C:\\Users\\mydre\\OneDrive\\Documents\\Audio-visual-app\\MainWindow.xaml.cs",
               "RelativeToolTip": "MainWindow.xaml.cs",
-              "ViewState": "AgIAAEYAAAAAAAAAAAAAwFcAAAAaAAAAAAAAAA==",
+              "ViewState": "AgIAAFsAAAAAAAAAAAAYwG0AAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-19T14:38:49.69Z",
               "EditorCaption": ""

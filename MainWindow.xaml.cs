@@ -22,6 +22,9 @@ namespace Audio_visual_app {
         static AudioFileReader? audioFile;
 
         string? filename;
+        double hours = 0;
+        double minutes = 0;
+        double seconds = 0;
 
         private bool playing = false;
         DispatcherTimer? dispatcherTimer;
@@ -55,7 +58,7 @@ namespace Audio_visual_app {
             // Start a timer
             dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
             dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0, 1);
             dispatcherTimer.Start();
 
             // initialise audio variables
@@ -66,7 +69,8 @@ namespace Audio_visual_app {
             outputDevice.Init(audioFile);
 
             // set slider
-            slider1.Maximum = audioFile.TotalTime.TotalMilliseconds;
+            slider1.Maximum = audioFile.TotalTime.TotalSeconds;
+            slider1.IsMoveToPointEnabled = true;
         }
 
         /// <summary>
@@ -82,21 +86,30 @@ namespace Audio_visual_app {
 
             playing = false;
             audioFile.Position = 0;
+            slider1.Value = 0;
+        }
+
+        public TimeSpan StripMilliseconds(TimeSpan time) {
+            return new TimeSpan(time.Hours, time.Minutes, time.Seconds);
         }
 
         private void dispatcherTimer_Tick(object sender, EventArgs e) {
-            if (playing) {
-                label1.Content = audioFile.CurrentTime;
-                slider1.Value = audioFile.CurrentTime.TotalMilliseconds;
-            }
+            label1.Content = StripMilliseconds(audioFile.CurrentTime);
+            System.Diagnostics.Debug.WriteLine(seconds);
+            slider1.Value = audioFile.CurrentTime.TotalSeconds;
         }
 
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            //if (playing && audioFile.Position != (long)slider1.Value) {
-                //dispatcherTimer.Stop();
+            Slider slider = sender as Slider;
+           
+            if (slider1.Value != audioFile.CurrentTime.TotalSeconds) {
                 //audioFile.Position = (long)slider1.Value;
-                //playing = false;
-            //}
+                audioFile.CurrentTime = new TimeSpan(
+                    0,
+                    0,
+                    (int)slider1.Value
+                );
+            }
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e) {
