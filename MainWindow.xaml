@@ -269,7 +269,7 @@
         <Button Content="Play" HorizontalAlignment="Left" Margin="25,58,0,0" VerticalAlignment="Top" Click="Button_Click_1" Height="20" Width="26"/>
         <Button Content="Pause" HorizontalAlignment="Left" Margin="56,58,0,0" VerticalAlignment="Top" Click="Button_Click_2" Height="20" Width="34"/>
         <Button Content="Stop" HorizontalAlignment="Left" Margin="95,58,0,0" VerticalAlignment="Top" Click="Button_Click_3" Height="20" Width="28"/>
-        <RadioButton Content="Onset" HorizontalAlignment="Left" Margin="25,83,0,0" VerticalAlignment="Top" Checked="RadioButton_Checked" Width="98" Height="25" VerticalContentAlignment="Center"/>
+        <RadioButton Name="radio1" Content="Onset" HorizontalAlignment="Left" Margin="25,83,0,0" VerticalAlignment="Top" Checked="RadioButton_Checked" Width="98" Height="25" VerticalContentAlignment="Center"/>
         <Label Content="BPM: 0" HorizontalAlignment="Left" Margin="25,108,0,0" VerticalAlignment="Top" Height="25" Width="98"/>
         <Label Content="Frequency: 0" HorizontalAlignment="Left" Margin="25,133,0,0" VerticalAlignment="Top" Height="25" Width="98"/>
     </Grid>

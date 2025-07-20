@@ -1,0 +1,6 @@
+private ISampleProvider provider;
+provider = reader.ToSampleProvider();
+samplesGroupSize = (int)(timer.Interval.TotalSeconds * reader.WaveFormat.SampleRate); //The value for this is 44
+
+float[] samps = new float[samplesGroupSize];
+provider.Read(samps, 0, samps.Length);

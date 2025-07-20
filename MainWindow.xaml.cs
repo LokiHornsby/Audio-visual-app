@@ -127,7 +127,7 @@ namespace Audio_visual_app {
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void RadioButton_Checked(object sender, RoutedEventArgs e) {
-
+            radio1.IsChecked = false;
         }
     }
 }

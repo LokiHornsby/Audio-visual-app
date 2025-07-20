@@ -101,5 +101,15 @@ namespace Audio_visual_app {
                 s
             );
         }
+
+        /// <summary>
+        /// Get 1024 bytes from current position in audio
+        /// </summary>
+        /// <returns></returns>
+        public static int[] getSample() {
+
+
+            return new int[1024];
+        }
     }
 }
