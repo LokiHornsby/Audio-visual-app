@@ -15,13 +15,13 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 namespace Audio_visual_app {
     using static LAVT;
 
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window {
         string? filename;
         static DispatcherTimer? dispatcherTimer;
 
+        /// <summary>
+        /// Initialise window
+        /// </summary>
         public MainWindow(){
             InitializeComponent();
 
@@ -39,6 +39,10 @@ namespace Audio_visual_app {
             slider1.IsMoveToPointEnabled = true;
         }
 
+        /// <summary>
+        /// Select a file
+        /// </summary>
+        /// <returns></returns>
         string? selectfile() {
             Console.WriteLine("Selecting file...");
 
@@ -57,7 +61,7 @@ namespace Audio_visual_app {
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-       void OnPlaybackStopped(object? sender, StoppedEventArgs args){
+        void OnPlaybackStopped(object? sender, StoppedEventArgs args){
             //outputDevice.Dispose();
             //outputDevice = null;
             //audioFile.Dispose();
@@ -66,16 +70,27 @@ namespace Audio_visual_app {
             slider1.Value = 0;
         }
 
+        /// <summary>
+        /// Update GUI on timer tick
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void dispatcherTimer_Tick(object sender, EventArgs e) {
             label1.Content = StripMilliseconds(GetCurrentTime());
             slider1.Value = GetCurrentTime().TotalSeconds;
         }
 
+        /// <summary>
+        /// When the slider changes value
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
             Slider slider = sender as Slider;
 
+            // if the the slider isn't equal to current position of the audio
             if (slider1.Value != GetCurrentTime().TotalSeconds) {
-                Seek((int)slider1.Value);
+                Seek((int)slider1.Value); // seek the audio to the sliders position
             }
         }
         
@@ -106,6 +121,11 @@ namespace Audio_visual_app {
             StopPlayback();
         }
 
+        /// <summary>
+        /// Onset
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void RadioButton_Checked(object sender, RoutedEventArgs e) {
 
         }
