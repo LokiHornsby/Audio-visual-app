@@ -1,4 +1,6 @@
 ﻿using NAudio.Wave;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,30 +15,42 @@ using System.Windows.Threading;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace Audio_visual_app {
+    using static App;
     using static LAVT;
 
     public partial class MainWindow : Window {
-        string? filename;
-        static DispatcherTimer? dispatcherTimer;
+        string filename;
+        static DispatcherTimer dispatcherTimer;
 
         /// <summary>
         /// Initialise window
         /// </summary>
         public MainWindow(){
+            // initialise WPF
             InitializeComponent();
 
+            // Select file
             filename = selectfile();
-            if (filename != null) { initialiseNAudio(filename); }
 
-            // Start a timer
-            dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
-            dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0, 1);
-            dispatcherTimer.Start();
+            // If file exists
+            if (filename != "") {
+                // LAVT (Loki's audio visual toolkit)
+                initialiseAudioVisualToolkit(filename);
 
-            // set slider
-            slider1.Maximum = GetTotalTime().TotalSeconds;
-            slider1.IsMoveToPointEnabled = true;
+                // Start a timer
+                dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+                dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+                dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0, 1);
+                dispatcherTimer.Start();
+
+                // set slider
+                slider1.Maximum = GetTotalTime().TotalSeconds;
+                slider1.IsMoveToPointEnabled = true;
+            } else {
+                MessageBox.Show("No file selected.", "No file", MessageBoxButton.OK, MessageBoxImage.Warning);
+                dump();
+                Application.Current.Shutdown();
+            }
         }
 
         /// <summary>
@@ -62,12 +76,36 @@ namespace Audio_visual_app {
         /// <param name="sender"></param>
         /// <param name="args"></param>
         void OnPlaybackStopped(object? sender, StoppedEventArgs args){
-            //outputDevice.Dispose();
-            //outputDevice = null;
-            //audioFile.Dispose();
-            //audioFile = null;
-
             slider1.Value = 0;
+        }
+
+        private void DrawData() {
+            canvas1.Children.Clear();
+
+            double[] data = GetPCMSample();
+
+            Polygon myPolygon = new Polygon();
+            myPolygon.Stroke = System.Windows.Media.Brushes.Black;
+            myPolygon.Fill = System.Windows.Media.Brushes.LightSeaGreen;
+            myPolygon.StrokeThickness = 0.1;
+            myPolygon.HorizontalAlignment = HorizontalAlignment.Left;
+            myPolygon.VerticalAlignment = VerticalAlignment.Bottom;
+
+            PointCollection points = new PointCollection();
+
+            for (int i = 0; i < data.Length; i++) {
+                System.Windows.Point p = new System.Windows.Point(i, data[i]);
+                points.Add(p);
+            }
+
+            System.Windows.Point a = new System.Windows.Point(data.Length+1, 0);
+            points.Add(a);
+
+            System.Windows.Point b = new System.Windows.Point(0, 0);
+            points.Add(b);
+
+            myPolygon.Points = points;
+            canvas1.Children.Add(myPolygon);
         }
 
         /// <summary>
@@ -78,6 +116,8 @@ namespace Audio_visual_app {
         private void dispatcherTimer_Tick(object sender, EventArgs e) {
             label1.Content = StripMilliseconds(GetCurrentTime());
             slider1.Value = GetCurrentTime().TotalSeconds;
+
+            DrawData();
         }
 
         /// <summary>

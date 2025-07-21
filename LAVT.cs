@@ -1,33 +1,50 @@
+using NAudio.Dmo.Effect;
+using NAudio.FileFormats.Mp3;
 using NAudio.Wave;
+using System.IO;
+using System.Security.Cryptography;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 
 namespace Audio_visual_app {
-    public static class LAVT {
+    public static class LAVT { // Loki's audio visual toolkit
         // Audio variables
         private static WaveOutEvent? outputDevice;
-        private static AudioFileReader? audioFile;
-
+        private static AudioFileReader? audioFileReader;
+        private static byte[] PCMdata;
         private static bool playing = false;
 
         /// <summary>
-        /// Initialise NAudio
+        /// Dump audio variables
+        /// </summary>
+        public static void dump() {
+            if (outputDevice != null) {
+                outputDevice.Dispose();
+                outputDevice = null;
+            }
+
+            if (audioFileReader != null) {
+                audioFileReader.Dispose();
+                audioFileReader = null;
+            }
+        }
+
+        /// <summary>
+        /// Initialise LAVT (Loki's audio visual toolkit)
         /// </summary>
         /// <param name="filename"></param>
-        public static void initialiseNAudio(string? filename) {
-            if (filename != null) {
-                // Store PCM Data
-                //WaveStream ws = new Mp3FileReader(filename);
-                //WaveStream pcm = WaveFormatConversionStream.CreatePcmStream(ws);
-                //int interval = pcm.WaveFormat.Channels * pcm.WaveFormat.SampleRate * pcm.WaveFormat.BitsPerSample / 8;
+        public static void initialiseAudioVisualToolkit(string filename) {
+            // output device
+            outputDevice = new WaveOutEvent();
+            outputDevice.PlaybackStopped += OnPlaybackStopped;
 
-                // initialise audio variables
-                outputDevice = new WaveOutEvent();
-                outputDevice.PlaybackStopped += OnPlaybackStopped;
+            // audio file reader
+            audioFileReader = new AudioFileReader(filename);
+            outputDevice.Init(audioFileReader);
 
-                audioFile = new AudioFileReader(filename);
-                outputDevice.Init(audioFile);
-            }
+            // PCM data
+            PCMdata = File.ReadAllBytes(audioFileReader.FileName);
         }
 
         /// <summary>
@@ -44,7 +61,7 @@ namespace Audio_visual_app {
         /// </summary>
         /// <returns></returns>
         public static TimeSpan GetCurrentTime() {
-            return audioFile.CurrentTime;
+            return audioFileReader.CurrentTime;
         }
 
         /// <summary>
@@ -52,7 +69,7 @@ namespace Audio_visual_app {
         /// </summary>
         /// <returns></returns>
         public static TimeSpan GetTotalTime() {
-            return audioFile.TotalTime;
+            return audioFileReader.TotalTime;
         }
 
         /// <summary>
@@ -69,7 +86,7 @@ namespace Audio_visual_app {
         /// </summary>
         public static void StopPlayback() {
             playing = false;
-            audioFile.Position = 0;
+            audioFileReader.Position = 0;
             outputDevice.Stop();
         }
 
@@ -94,8 +111,7 @@ namespace Audio_visual_app {
         /// </summary>
         /// <param name="s"></param>
         public static void Seek(int s) {
-            //audioFile.Position = (long)slider1.Value;
-            audioFile.CurrentTime = new TimeSpan(
+            audioFileReader.CurrentTime = new TimeSpan(
                 0,
                 0,
                 s
@@ -103,13 +119,33 @@ namespace Audio_visual_app {
         }
 
         /// <summary>
-        /// Get 1024 bytes from current position in audio
+        /// Get a second of PCM data
         /// </summary>
         /// <returns></returns>
-        public static int[] getSample() {
+        public static double[] GetPCMSample() {
+            double current = GetTotalTime().TotalMilliseconds;
 
+            // Get starting position
+            int sampleSize = (int)(PCMdata.Length / current);
 
-            return new int[1024];
+            // 1 second Sample of PCM data
+            double[] sample = new double[sampleSize];
+
+            // Fill array with PCM data
+            for (int i = 0; i < sample.Length; i++) {
+                sample[i] = PCMdata[(sampleSize * (int)GetCurrentTime().TotalMilliseconds) + i];
+            }
+
+            // Return array
+            return sample;
+        }
+
+        /// <summary>
+        /// Peform FFT on input sample
+        /// </summary>
+        /// <returns></returns>
+        public static byte[] FFT(byte[] input) {
+            return new byte[1024];
         }
     }
 }
