@@ -271,8 +271,8 @@
         <Button Content="Pause" HorizontalAlignment="Left" Margin="56,58,0,0" VerticalAlignment="Top" Click="Button_Click_2" Height="20" Width="34"/>
         <Button Content="Stop" HorizontalAlignment="Left" Margin="95,58,0,0" VerticalAlignment="Top" Click="Button_Click_3" Height="20" Width="28"/>
         <RadioButton x:Name="radio1" Content="Onset" HorizontalAlignment="Left" Margin="25,83,0,0" VerticalAlignment="Top" Checked="RadioButton_Checked" Width="98" Height="25" VerticalContentAlignment="Center"/>
-        <Label Content="BPM: 0" HorizontalAlignment="Left" Margin="25,108,0,0" VerticalAlignment="Top" Height="25" Width="98"/>
-        <Label Content="Frequency: 0" HorizontalAlignment="Left" Margin="25,133,0,0" VerticalAlignment="Top" Height="25" Width="98"/>
         <Canvas Name="canvas1" Margin="128,83,0,242"/>
+        <Slider Name="sensitivity" HorizontalAlignment="Left" Margin="128,158,0,0" VerticalAlignment="Top" Width="124" Maximum="100"/>
+        <Label Content="Sensitivity" HorizontalAlignment="Left" Margin="252,158,0,0" VerticalAlignment="Top" Height="18" Width="123" FontSize="10" VerticalContentAlignment="Center" Padding="5,0,5,0"/>
     </Grid>
 </Window>

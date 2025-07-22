@@ -1,21 +1,10 @@
-﻿using NAudio.Wave;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Text;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace Audio_visual_app {
-    using static App;
     using static LAVT;
 
     public partial class MainWindow : Window {
@@ -44,7 +33,8 @@ namespace Audio_visual_app {
                 dispatcherTimer.Start();
 
                 // set slider
-                slider1.Maximum = GetTotalTime().TotalSeconds;
+                slider1.Maximum = GetTotalTime().TotalMilliseconds;
+                slider1.Minimum = 0;
                 slider1.IsMoveToPointEnabled = true;
             } else {
                 MessageBox.Show("No file selected.", "No file", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -70,40 +60,44 @@ namespace Audio_visual_app {
             return dialog.FileName;
         }
 
-        /// <summary>
-        /// When playback stops
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        void OnPlaybackStopped(object? sender, StoppedEventArgs args){
-            slider1.Value = 0;
-        }
-
         private void DrawData() {
+            // Clear canvas
             canvas1.Children.Clear();
 
-            double[] data = GetPCMSample();
+            // Get PCM data
+            System.Numerics.Complex[] FFT = PerformFFT(GetPCMSample());
+            double[] data = GetOnsets(GetPowers(FFT), (int)sensitivity.Value);
 
+            if (data[0] > 0) {
+                radio1.IsChecked = true;
+            } else {
+                radio1.IsChecked = false;
+            }
+            
+            // Setup polygon object
             Polygon myPolygon = new Polygon();
             myPolygon.Stroke = System.Windows.Media.Brushes.Black;
-            myPolygon.Fill = System.Windows.Media.Brushes.LightSeaGreen;
-            myPolygon.StrokeThickness = 0.1;
-            myPolygon.HorizontalAlignment = HorizontalAlignment.Left;
-            myPolygon.VerticalAlignment = VerticalAlignment.Bottom;
+            myPolygon.Fill = System.Windows.Media.Brushes.Aquamarine;
+            myPolygon.StrokeThickness = 1;
+            myPolygon.HorizontalAlignment = HorizontalAlignment.Center;
+            myPolygon.VerticalAlignment = VerticalAlignment.Center;
 
+            // Define points
             PointCollection points = new PointCollection();
 
+            // Draw points
             for (int i = 0; i < data.Length; i++) {
                 System.Windows.Point p = new System.Windows.Point(i, data[i]);
                 points.Add(p);
             }
 
-            System.Windows.Point a = new System.Windows.Point(data.Length+1, 0);
+            System.Windows.Point a = new System.Windows.Point(data.Length+1, 50);
             points.Add(a);
 
-            System.Windows.Point b = new System.Windows.Point(0, 0);
+            System.Windows.Point b = new System.Windows.Point(0, 50);
             points.Add(b);
 
+            // Add points
             myPolygon.Points = points;
             canvas1.Children.Add(myPolygon);
         }
@@ -114,9 +108,11 @@ namespace Audio_visual_app {
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void dispatcherTimer_Tick(object sender, EventArgs e) {
-            label1.Content = StripMilliseconds(GetCurrentTime());
-            slider1.Value = GetCurrentTime().TotalSeconds;
+            // update slider GUI
+            label1.Content = GetCurrentTime();
+            slider1.Value = GetCurrentTime().TotalMilliseconds;
 
+            // Draw canvas data
             DrawData();
         }
 
@@ -129,7 +125,7 @@ namespace Audio_visual_app {
             Slider slider = sender as Slider;
 
             // if the the slider isn't equal to current position of the audio
-            if (slider1.Value != GetCurrentTime().TotalSeconds) {
+            if (slider1.Value != GetCurrentTime().TotalMilliseconds) {
                 Seek((int)slider1.Value); // seek the audio to the sliders position
             }
         }
@@ -161,13 +157,8 @@ namespace Audio_visual_app {
             StopPlayback();
         }
 
-        /// <summary>
-        /// Onset
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void RadioButton_Checked(object sender, RoutedEventArgs e) {
-            radio1.IsChecked = false;
+
         }
     }
 }
