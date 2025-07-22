@@ -3,5 +3,5 @@ An app for analysing audio files.
 
 # Dependencies
 - [NAudio](https://github.com/naudio/NAudio)
-- [`net9.0-windows`](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
-- [FFTSharp](https://github.com/swharden/FftSharp)
+- [.NET-9.0-Windows](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+- [FFTSharp version 2.2.0](https://github.com/swharden/FftSharp)
