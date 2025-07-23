@@ -29,7 +29,7 @@ namespace Audio_visual_app {
                 // Start a timer
                 dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
                 dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-                dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0, 1);
+                dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
                 dispatcherTimer.Start();
 
                 // set slider
@@ -52,7 +52,7 @@ namespace Audio_visual_app {
 
             // Configure open file dialog box
             var dialog = new Microsoft.Win32.OpenFileDialog();
-            dialog.Filter = "Audio files|*.wav;*.mp3"; // Filter files by extension
+            dialog.Filter = "Audio files|*.mp3"; // Filter files by extension
 
             // Show open file dialog box
             dialog.ShowDialog();
@@ -60,20 +60,22 @@ namespace Audio_visual_app {
             return dialog.FileName;
         }
 
-        private void DrawData() {
+        /*private void DrawData() {
             // Clear canvas
             canvas1.Children.Clear();
 
-            // Get PCM data
-            System.Numerics.Complex[] FFT = PerformFFT(GetPCMSample());
-            double[] data = GetOnsets(GetPowers(FFT), (int)sensitivity.Value);
+            float[] data = PCM[0];
 
-            if (data[0] > 0) {
+            // Get PCM data
+            //System.Numerics.Complex[] FFT = PerformFFT(signal);
+            //double[] data = GetOnsets(GetPowers(FFT), (int)sensitivity.Value);
+
+            /*if (data[0] > 0) {
                 radio1.IsChecked = true;
             } else {
                 radio1.IsChecked = false;
             }
-            
+
             // Setup polygon object
             Polygon myPolygon = new Polygon();
             myPolygon.Stroke = System.Windows.Media.Brushes.Black;
@@ -100,7 +102,7 @@ namespace Audio_visual_app {
             // Add points
             myPolygon.Points = points;
             canvas1.Children.Add(myPolygon);
-        }
+        }*/
 
         /// <summary>
         /// Update GUI on timer tick
@@ -112,8 +114,9 @@ namespace Audio_visual_app {
             label1.Content = GetCurrentTime();
             slider1.Value = GetCurrentTime().TotalMilliseconds;
 
-            // Draw canvas data
-            DrawData();
+            double[] sample = GetPCMSample();
+            double[] powers = GetPowers(PerformFFT(sample));
+            radio1.IsChecked = powers.Max() > 0;
         }
 
         /// <summary>

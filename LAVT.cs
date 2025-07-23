@@ -1,16 +1,69 @@
-using NAudio.Wave;
-using System.IO;
 using FftSharp;
-using System.Windows.Threading;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
+using System;
+using System.IO;
 using System.Security.Policy;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace Audio_visual_app {
     public static class LAVT { // Loki's audio visual toolkit
         // Audio variables
-        private static WaveOutEvent? outputDevice;
-        private static AudioFileReader? audioFileReader;
-        private static byte[] PCMdata;
+        private static WaveOutEvent outputDevice;
+        private static Mp3FileReader mp3reader;
         private static bool playing = false;
+        private static List<byte[]> data; 
+
+        /// <summary>
+        /// Initialise LAVT (Loki's audio visual toolkit)
+        /// </summary>
+        /// <param name="filename"></param>
+        public static void initialiseAudioVisualToolkit(string filename) {
+            // output device
+            outputDevice = new WaveOutEvent();
+            outputDevice.PlaybackStopped += OutputDevice_PlaybackStopped;
+
+            // audio file reader
+            mp3reader = new Mp3FileReader(filename);
+            outputDevice.Init(mp3reader);
+
+            // Initialise data list
+            data = new List<byte[]>();
+        }
+
+        /// <summary>
+        /// Get a sample of pcm data
+        /// </summary>
+        public static double[] GetPCMSample() {
+            // creates a pcm stream
+            NAudio.Wave.WaveStream pcmstream = NAudio.Wave.WaveFormatConversionStream.CreatePcmStream(mp3reader);
+            
+            // amount of bytes in a second.
+            int second = pcmstream.WaveFormat.Channels * pcmstream.WaveFormat.SampleRate * pcmstream.WaveFormat.BitsPerSample / 8; 
+            
+            // buffer (millisecond in size)
+            byte[] buffer = new byte[second / 60];
+
+            // read ahead by size of buffer
+            pcmstream.Read(buffer);
+
+            // define pcm array
+            double[] pcm = new double[pcmstream.WaveFormat.BitsPerSample];
+
+            // Convert bytes to floats
+            for (int i = 0; i < pcm.Length; i++) {
+                pcm[i] = BitConverter.ToDouble(buffer, 0);
+            }
+
+            // Reset reader position
+            if (GetCurrentTime() != GetTotalTime()) {
+                mp3reader.Position -= buffer.Length;
+            }
+
+            // Return pcm data
+            return pcm;
+        }
 
         /// <summary>
         /// Is the audio playing?
@@ -29,32 +82,10 @@ namespace Audio_visual_app {
                 outputDevice = null;
             }
 
-            if (audioFileReader != null) {
-                audioFileReader.Dispose();
-                audioFileReader = null;
+            if (mp3reader != null) {
+                mp3reader.Dispose();
+                mp3reader = null;
             }
-        }
-
-        private static void OutputDevice_PlaybackStopped(object? sender, StoppedEventArgs e) {
-            StopPlayback();
-        }
-
-        /// <summary>
-        /// Initialise LAVT (Loki's audio visual toolkit)
-        /// </summary>
-        /// <param name="filename"></param>
-        public static void initialiseAudioVisualToolkit(string filename) {
-            // output device
-            outputDevice = new WaveOutEvent();
-            outputDevice.PlaybackStopped += OutputDevice_PlaybackStopped;
-
-            // audio file reader
-            audioFileReader = new AudioFileReader(filename);
-            outputDevice.Init(audioFileReader);
-
-            // PCM data
-            PCMdata = new byte[audioFileReader.Length];
-            audioFileReader.Read(PCMdata, 0, PCMdata.Length);//File.ReadAllBytes(audioFileReader.FileName);
         }
 
         /// <summary>
@@ -62,7 +93,7 @@ namespace Audio_visual_app {
         /// </summary>
         /// <returns></returns>
         public static TimeSpan GetCurrentTime() {
-            return audioFileReader.CurrentTime;
+            return mp3reader.CurrentTime;
         }
 
         /// <summary>
@@ -70,7 +101,16 @@ namespace Audio_visual_app {
         /// </summary>
         /// <returns></returns>
         public static TimeSpan GetTotalTime() {
-            return audioFileReader.TotalTime;
+            return mp3reader.TotalTime;
+        }
+
+        /// <summary>
+        /// when audio is finished playing
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private static void OutputDevice_PlaybackStopped(object? sender, StoppedEventArgs e) {
+            StopPlayback();
         }
 
         /// <summary>
@@ -78,7 +118,7 @@ namespace Audio_visual_app {
         /// </summary>
         public static void StopPlayback() {
             playing = false;
-            audioFileReader.Position = 0;
+            mp3reader.Position = 0;
             outputDevice.Stop();
         }
 
@@ -103,32 +143,13 @@ namespace Audio_visual_app {
         /// </summary>
         /// <param name="s">position to seek to</param>
         public static void Seek(int s) {
-            audioFileReader.CurrentTime = new TimeSpan (
+            mp3reader.CurrentTime = new TimeSpan (
                 0,
                 0,
                 0,
                 0,
                 s
             );
-        }
-
-        /// <summary>
-        /// Gets a sample of pcm data
-        /// </summary>
-        /// <param name="ms"></param>
-        /// <param name="samplesize"></param>
-        /// <returns></returns>
-        public static double[] GetPCMSample() {
-            // Define sample array
-            double[] sample = new double[64];
-
-            // Fill array with pcm data
-            for (int i = 0; i < sample.Length; i++) {
-                sample[i] = PCMdata[(sample.Length * (int)(GetCurrentTime().TotalMilliseconds / 4)) + i];
-            }
-
-            // Return array
-            return sample;
         }
 
         /// <summary>
@@ -170,13 +191,13 @@ namespace Audio_visual_app {
         /// <param name="spectrum"></param>
         /// <returns></returns>
         public static double[] GetFrequencies(System.Numerics.Complex[] spectrum) {
-             return FFT.FrequencyScale(GetPowers(spectrum).Length, audioFileReader.WaveFormat.SampleRate);
+             return FFT.FrequencyScale(GetPowers(spectrum).Length, mp3reader.WaveFormat.SampleRate);
         }
 
         /// <summary>
         /// Get onsets in a sample
         /// </summary>
-        public static double[] GetOnsets(double[] powerFFT, int sensitivity) {
+        public static double[] GetOnset(double[] powerFFT, int sensitivity) {
             double[] onsets = new double[powerFFT.Length];
             int max = (int)powerFFT.Max();
 
