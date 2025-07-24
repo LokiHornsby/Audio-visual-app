@@ -265,11 +265,13 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <Slider x:Name="slider1" Style="{DynamicResource SliderStyle1}" IsMoveToPointEnabled="True" HorizontalAlignment="Left" Margin="25,35,0,0" VerticalAlignment="Top" Width="350" ValueChanged="Slider_ValueChanged" Maximum="1" Height="18"/>
-        <Label x:Name="label1" Content="00:00:00" HorizontalAlignment="Left" Margin="128,58,0,0" VerticalAlignment="Top" AutomationProperties.Name="lbl" Height="20" Width="247" FontSize="10" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Padding="2,2,2,2"/>
-        <Button Content="Play" HorizontalAlignment="Left" Margin="25,58,0,0" VerticalAlignment="Top" Click="Button_Click_1" Height="20" Width="26"/>
-        <Button Content="Pause" HorizontalAlignment="Left" Margin="56,58,0,0" VerticalAlignment="Top" Click="Button_Click_2" Height="20" Width="34"/>
-        <Button Content="Stop" HorizontalAlignment="Left" Margin="95,58,0,0" VerticalAlignment="Top" Click="Button_Click_3" Height="20" Width="28"/>
-        <RadioButton x:Name="radio1" Content="Onset" HorizontalAlignment="Left" Margin="25,83,0,0" VerticalAlignment="Top" Checked="RadioButton_Checked" Width="98" Height="25" VerticalContentAlignment="Center"/>
+        <Slider x:Name="slider1" Style="{DynamicResource SliderStyle1}" IsMoveToPointEnabled="True" HorizontalAlignment="Left" Margin="25,10,0,0" VerticalAlignment="Top" Width="350" ValueChanged="Slider_ValueChanged" Maximum="1" Height="18"/>
+        <Label x:Name="label1" Content="00:00:00" HorizontalAlignment="Left" Margin="128,33,0,0" VerticalAlignment="Top" AutomationProperties.Name="lbl" Height="20" Width="247" FontSize="10" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Padding="2,2,2,2"/>
+        <Button Name="B1" Content="Play" HorizontalAlignment="Left" Margin="25,33,0,0" VerticalAlignment="Top" Click="Button_Click_1" Height="20" Width="26"/>
+        <Button Name="B2" Content="Pause" HorizontalAlignment="Left" Margin="56,33,0,0" VerticalAlignment="Top" Click="Button_Click_2" Height="20" Width="34"/>
+        <Button Name="B3" Content="Stop" HorizontalAlignment="Left" Margin="95,33,0,0" VerticalAlignment="Top" Click="Button_Click_3" Height="20" Width="28"/>
+        <CheckBox Name="check1" Content="Loading" HorizontalAlignment="Left" Margin="25,58,0,0" VerticalAlignment="Top" Height="15" Width="350" Checked="check1_Checked"/>
+        <CheckBox Name="check2" Content="2 " HorizontalAlignment="Left" Margin="25,78,0,0" VerticalAlignment="Top" Height="15" Width="350"/>
+        <CheckBox Name="check3" Content="3" HorizontalAlignment="Left" Margin="25,98,0,0" VerticalAlignment="Top" Height="15" Width="350"/>
     </Grid>
 </Window>
