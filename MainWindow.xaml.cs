@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualBasic.Devices;
+using NAudio.Wave.Compression;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -39,7 +40,7 @@ namespace Audio_visual_app {
                 // Start a timer
                 dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
                 dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-                dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
+                dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0, 1);
                 dispatcherTimer.Start();
 
                 // set slider
@@ -53,9 +54,10 @@ namespace Audio_visual_app {
                 B2.IsEnabled = false;
                 B3.IsEnabled = false;
                 check1.IsEnabled = false;
+                check1.Content = "Loading...";
                 check2.IsEnabled = false;
                 check3.IsEnabled = false;
-
+         
                 // audio
                 audioLoading = true;
             } else {
@@ -82,45 +84,15 @@ namespace Audio_visual_app {
             return dialog.FileName;
         }
 
-        private void DrawData(double[] data) {
-            /*// Clear canvas
-            canvas1.Children.Clear();
-
-            // Setup polygon object
-            Polygon myPolygon = new Polygon();
-            myPolygon.Stroke = System.Windows.Media.Brushes.Black;
-            myPolygon.Fill = System.Windows.Media.Brushes.Aquamarine;
-            myPolygon.StrokeThickness = 1;
-            myPolygon.HorizontalAlignment = HorizontalAlignment.Center;
-            myPolygon.VerticalAlignment = VerticalAlignment.Center;
-
-            // Define points
-            PointCollection points = new PointCollection();
-
-            // Draw points
-            for (int i = 0; i < data.Length; i++) {
-                System.Windows.Point p = new System.Windows.Point(i, data[i] / 10000);
-                points.Add(p);
-            }
-
-            System.Windows.Point a = new System.Windows.Point(data.Length+1, 50);
-            points.Add(a);
-
-            System.Windows.Point b = new System.Windows.Point(0, 50);
-            points.Add(b);
-
-            // Add points
-            myPolygon.Points = points;
-            canvas1.Children.Add(myPolygon);*/
-        }
-
         private void enable() {
             audioLoading = false;
+            slider1.Value = 0;
             slider1.IsEnabled = true;
             B1.IsEnabled = true;
             B2.IsEnabled = true;
             B3.IsEnabled = true;
-            slider1.Value = 0;
+            check1.IsChecked = true;
+            check1.Content = "Loaded.";
         }
 
         /// <summary>
@@ -132,73 +104,37 @@ namespace Audio_visual_app {
             // current time
             TimeSpan current = GetCurrentTime();
 
-            // Loading
-            check1.IsChecked = !audioLoading;
+            // Slider
             slider1.Value = current.TotalMilliseconds;
+
+            // Playback label
+            label1.Content = GetCurrentTime();
 
             // If audio is loading
             if (audioLoading) {
-                // Percentage label
-                label1.Content = ((current.TotalMilliseconds / GetTotalTime().TotalMilliseconds) * 100).ToString("0") + "%";
-                
-                // loading tag
-                check1.Content = "Loading...";
-                
-                // populate samples
-                double[] sample = GetPCMSample(1024);
+                if (GetCurrentTime() != GetTotalTime()) {
+                    double[] second = ReadSecond();
+                    double[] sample = new double[1024];
 
-                for (int i = 0; i < sample.Length; i++) {
-                    onset.Add(sample[i] > 0);
+                    for (int i = 0; i < sample.Length; i++) {
+                        sample[i] = second[i];
+                    }
+
+                    System.Numerics.Complex[] FFT = PerformFFT(sample);
+                    double[] mags = GetMagnitudes(FFT);
+
+                    onset.Add(mags.Max() > 0);
+                } else {
+                    // end of load
+                    enable();
                 }
-
-                // end of load
-                if (GetCurrentTime() == GetTotalTime()) { enable(); }
             } else {
-                // playback label
-                label1.Content = GetCurrentTime();
-
-                // loaded
-                check1.Content = "Loaded.";
-
                 // current index
-                int index = (int)current.TotalSeconds;
+                int index = (int)(current.TotalSeconds);
                 check2.IsChecked = onset[index];
+                check2.Content = (index).ToString() + "/" + onset.Count.ToString();
+                check3.Content = GetPCMStream().WaveFormat.BitsPerSample;
             }
-
-            // Get a sample
-            //
-
-            // Perform an fft on it
-            //System.Numerics.Complex[] FFT = PerformFFT(sample);
-
-            // Check if it's an onset
-            //int sensitivity = 10;
-            //double[] powers = GetPowers(FFT);
-            //check1.IsChecked = powers.Max() > sensitivity;
-
-            /////////////////////////////////////////////////////////////////
-            //check1.Content = "power max: " + powers.Max().ToString("0.0");
-
-            // Get sample and perform FFT
-            /*if (hasPCMData()) {
-                double[] sample = GetPCMSamples()[(int)Math.Floor(GetCurrentTime().TotalSeconds)];
-            }*/
-
-            /*System.Numerics.Complex[] FFT = PerformFFT(sample);
-
-            // Power
-            double[] powers = GetPowers(FFT);
-            //check1.IsChecked = powers.Max() > 0;
-            //check1.Content = "power max: " + powers.Max().ToString("0.0");
-
-            // Frequency
-            double[] frequencies = GetFrequencies(FFT);
-            double frequency = 0;
-            frequency = frequencies[Array.IndexOf(powers, powers.Max())];
-
-            check3.IsChecked = true;
-            check3.Content = "Frequency: " + frequency.ToString("0.0");*/
-            /////////////////////////////////////////////////////////////////
         }
 
         /// <summary>
