@@ -1,20 +1,15 @@
 using FftSharp;
 using NAudio.Wave;
-using NAudio.Wave.Asio;
+using System.IO;
 
 namespace Audio_visual_app {
     public static class LAVT { // Loki's audio visual toolkit
         // Audio variables
         private static WaveOutEvent outputDevice;
-        private static Mp3FileReader mp3reader;
-        private static NAudio.Wave.Mp3FileReaderBase basemp3read;
+        private static Mp3FileReader reader;
 
         // Playing?
         private static bool playing = false;
-
-        // PCM data
-        private static WaveStream PCMstream;
-        private static bool gotPCMData;
 
         /// <summary>
         /// Initialise LAVT (Loki's audio visual toolkit)
@@ -26,51 +21,8 @@ namespace Audio_visual_app {
             outputDevice.PlaybackStopped += OutputDevice_PlaybackStopped;
 
             // audio file reader
-            mp3reader = new Mp3FileReader(filename);
-            outputDevice.Init(mp3reader);
-
-            // Get array of pcm samples
-            PCMstream = NAudio.Wave.WaveFormatConversionStream.CreatePcmStream(mp3reader);
-            gotPCMData = false;
-        }
-
-        public static WaveStream GetPCMStream() {
-            return PCMstream;
-        }
-
-        /// <summary>
-        /// Get a byte of data from current position in mp3filereader
-        /// </summary>
-        private static byte[] GetByte() {         
-            byte[] buffer = new byte[16];
-            int bytesread = mp3reader.Read(buffer, 0, buffer.Length);
-            
-            return buffer;
-        }
-
-        /// <summary>
-        /// Convert a byte to a double (PCM)
-        /// </summary>
-        public static double GetBytePCM() {
-            return BitConverter.ToDouble(GetByte(), 0);
-        }
-
-        /// <summary>
-        /// Get a collection of PCM samples
-        /// </summary>
-        public static double[] GetPCMSample(int size) {
-            double[] sample = new double[size];
-
-            for (int i = 0; i < size; i++) {
-                sample[i] = GetBytePCM();
-            }
-
-            return sample;
-        }
-
-        public static double[] ReadSecond() {
-            WaveStream stream = GetPCMStream();
-            return GetPCMSample(stream.WaveFormat.SampleRate / 4); // 1 second
+            reader = new Mp3FileReader(filename);
+            outputDevice.Init(reader);
         }
 
         public static bool GetOnset(double[] sample) {
@@ -94,26 +46,19 @@ namespace Audio_visual_app {
                 outputDevice = null;
             }
 
-            if (mp3reader != null) {
-                mp3reader.Dispose();
-                mp3reader = null;
+            if (reader != null) {
+                reader.Dispose();
+                reader = null;
             }
         }
 
-        /// <summary>
-        /// Get current position of audio
-        /// </summary>
-        /// <returns></returns>
-        public static TimeSpan GetCurrentTime() {
-            return mp3reader.CurrentTime;
-        }
 
         /// <summary>
         /// Get total length of the audio
         /// </summary>
         /// <returns></returns>
         public static TimeSpan GetTotalTime() {
-            return mp3reader.TotalTime;
+            return reader.TotalTime;
         }
 
         /// <summary>
@@ -130,7 +75,7 @@ namespace Audio_visual_app {
         /// </summary>
         public static void StopPlayback() {
             playing = false;
-            mp3reader.Position = 0;
+            reader.Position = 0;
             outputDevice.Stop();
         }
 
@@ -150,18 +95,73 @@ namespace Audio_visual_app {
             outputDevice.Play();
         }
 
+        public static long getReadPosition() {
+            return reader.Position;
+        }
+
+        public static long getReadLength() {
+            return reader.Length;
+        }
+
+        public static int getSampleSize() {
+            return 32;
+        }
+
+        public static int getSampleReadLength() {
+            return (int)(getReadLength() / getSampleSize());
+        }
+
+        public static int getSampleReadPosition() {
+            return (int)(getReadPosition() / getSampleSize());
+        }
+
+        public static Mp3FileReader getReader() {
+            return reader;
+        }
+
+        /// <summary>
+        /// Get 32
+        /// </summary>
+        public static double[] GetSample() {
+            // array of floats
+            double[] sample = new double[getSampleSize()];
+
+            for (int i = 0; i < sample.Length; i++) {
+                // convert array to float
+                //sample[i] = BitConverter.ToDouble(getByte(), 0);
+            }
+
+            return sample;
+        }
+
+        public static int GetTotalMilliseconds() {
+            return (int)Math.Floor(reader.TotalTime.TotalMilliseconds);
+        }
+
+        public static int GetCurrentMilliseconds() {
+            return (int)Math.Floor(reader.CurrentTime.TotalMilliseconds);
+        }
+
         /// <summary>
         /// Seek to a place in the audio
         /// </summary>
         /// <param name="s">position to seek to</param>
-        public static void Seek(int s) {
-            mp3reader.CurrentTime = new TimeSpan (
+        public static void SeekMilliseconds(int s) {
+            reader.CurrentTime = new TimeSpan (
                 0,
                 0,
                 0,
                 0,
                 s
             );
+        }
+
+        public static void setReadPosition(int s) {
+            reader.Position = s;
+        }
+
+        public static bool IsPowerOfTwo(ulong x) {
+            return (x != 0) && ((x & (x - 1)) == 0);
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace Audio_visual_app {
         /// <param name="spectrum"></param>
         /// <returns></returns>
         public static double[] GetFrequencies(System.Numerics.Complex[] spectrum) {
-             return FFT.FrequencyScale(GetPowers(spectrum).Length, mp3reader.WaveFormat.SampleRate);
+             return FFT.FrequencyScale(GetPowers(spectrum).Length, reader.WaveFormat.SampleRate);
         }
 
         /// <summary>

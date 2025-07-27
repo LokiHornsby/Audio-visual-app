@@ -1,9 +1,6 @@
-﻿using Microsoft.VisualBasic.Devices;
-using NAudio.Wave.Compression;
+﻿using NAudio.Wave;
+using System;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace Audio_visual_app {
@@ -13,14 +10,11 @@ namespace Audio_visual_app {
         // file name
         string filename;
 
-        // timer
-        static DispatcherTimer dispatcherTimer;
-
         // audio is loading
         bool audioLoading;
 
-        // events
-        public List<bool> onset = new List<bool>();
+        // arrays
+        short[] pcm;
 
         /// <summary>
         /// Initialise window
@@ -37,15 +31,10 @@ namespace Audio_visual_app {
                 // LAVT (Loki's audio visual toolkit)
                 initialiseAudioVisualToolkit(filename);
 
-                // Start a timer
-                dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
-                dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-                dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0, 1);
-                dispatcherTimer.Start();
-
                 // set slider
-                slider1.Maximum = GetTotalTime().TotalMilliseconds;
+                slider1.Maximum = getReadLength() - 8;
                 slider1.Minimum = 0;
+                slider1.Value = 0;
                 slider1.IsMoveToPointEnabled = true;
 
                 // disable UI
@@ -57,9 +46,24 @@ namespace Audio_visual_app {
                 check1.Content = "Loading...";
                 check2.IsEnabled = false;
                 check3.IsEnabled = false;
-         
+
                 // audio
                 audioLoading = true;
+
+                // get samples
+                using (AudioFileReader reader = new AudioFileReader(filename)) {
+                    byte[] buffer = new byte[reader.Length];
+                    int read = reader.Read(buffer, 0, buffer.Length);
+
+                    short[] sampleBuffer = new short[read / 2];
+                    Buffer.BlockCopy(buffer, 0, sampleBuffer, 0, read);
+
+                    pcm = sampleBuffer;
+
+                    slider1.Maximum = pcm.Length - getSampleSize();
+                }
+
+                enable();
             } else {
                 MessageBox.Show("No file selected.", "No file", MessageBoxButton.OK, MessageBoxImage.Warning);
                 dump();
@@ -85,70 +89,47 @@ namespace Audio_visual_app {
         }
 
         private void enable() {
+            // enable/disable
             audioLoading = false;
-            slider1.Value = 0;
-            slider1.IsEnabled = true;
             B1.IsEnabled = true;
             B2.IsEnabled = true;
             B3.IsEnabled = true;
+
+            // loaded check box
             check1.IsChecked = true;
             check1.Content = "Loaded.";
+
+            // slider modify
+            slider1.IsEnabled = true;
+            setReadPosition(0);
         }
-
-        /// <summary>
-        /// Update GUI on timer tick
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void dispatcherTimer_Tick(object sender, EventArgs e) {
-            // current time
-            TimeSpan current = GetCurrentTime();
-
-            // Slider
-            slider1.Value = current.TotalMilliseconds;
-
-            // Playback label
-            label1.Content = GetCurrentTime();
-
-            // If audio is loading
-            if (audioLoading) {
-                if (GetCurrentTime() != GetTotalTime()) {
-                    double[] second = ReadSecond();
-                    double[] sample = new double[1024];
-
-                    for (int i = 0; i < sample.Length; i++) {
-                        sample[i] = second[i];
-                    }
-
-                    System.Numerics.Complex[] FFT = PerformFFT(sample);
-                    double[] mags = GetMagnitudes(FFT);
-
-                    onset.Add(mags.Max() > 0);
-                } else {
-                    // end of load
-                    enable();
-                }
-            } else {
-                // current index
-                int index = (int)(current.TotalSeconds);
-                check2.IsChecked = onset[index];
-                check2.Content = (index).ToString() + "/" + onset.Count.ToString();
-                check3.Content = GetPCMStream().WaveFormat.BitsPerSample;
-            }
-        }
-
+        
         /// <summary>
         /// When the slider changes value
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            Slider slider = sender as Slider;
+            // floor slider
+            slider1.Value = Math.Floor(slider1.Value);
 
-            // if the the slider isn't equal to current position of the audio
-            if (slider1.Value != GetCurrentTime().TotalMilliseconds && !audioLoading) {
-                Seek((int)slider1.Value); // seek the audio to the sliders position
+            // move slider
+            if (slider1.Value != getReadPosition() && !audioLoading) {
+                setReadPosition((int)slider1.Value);
             }
+
+            // Playback label
+            label1.Content = slider1.Value + " / " + slider1.Maximum;
+
+            // Value
+            check2.Content = pcm[(int)slider1.Value];
+
+            // read 32 pcm
+            double[] sample = new double[getSampleSize()];
+
+            for (int i = 0; i < getSampleSize(); i++) {
+                sample[i] = pcm[(int)slider1.Value + i];
+            }
+
+            check3.Content = GetMagnitudes(PerformFFT(sample)).Max();
         }
         
         /// <summary>
