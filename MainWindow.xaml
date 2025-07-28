@@ -273,5 +273,6 @@
         <CheckBox Name="check1" Content="&#xD;&#xA;&#xD;&#xA;" HorizontalAlignment="Left" Margin="25,58,0,0" VerticalAlignment="Top" Height="15" Width="350" Checked="check1_Checked"/>
         <CheckBox Name="check2" Content="" HorizontalAlignment="Left" Margin="25,78,0,0" VerticalAlignment="Top" Height="15" Width="350"/>
         <CheckBox Name="check3" Content="" HorizontalAlignment="Left" Margin="25,98,0,0" VerticalAlignment="Top" Height="15" Width="350"/>
+        <Canvas Name="canvas1" Margin="10,118,-15,10"/>
     </Grid>
 </Window>

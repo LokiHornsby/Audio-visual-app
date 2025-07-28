@@ -1,6 +1,8 @@
 ﻿using NAudio.Wave;
-using System;
+using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace Audio_visual_app {
@@ -10,11 +12,15 @@ namespace Audio_visual_app {
         // file name
         string filename;
 
-        // audio is loading
-        bool audioLoading;
+        // timer
+        DispatcherTimer dispatcherTimer;
 
         // arrays
         short[] pcm;
+        double[][] samples;
+        double[][] windows;
+        System.Numerics.Complex[][] ffts;
+
 
         /// <summary>
         /// Initialise window
@@ -31,44 +37,69 @@ namespace Audio_visual_app {
                 // LAVT (Loki's audio visual toolkit)
                 initialiseAudioVisualToolkit(filename);
 
-                // set slider
-                slider1.Maximum = getReadLength() - 8;
-                slider1.Minimum = 0;
-                slider1.Value = 0;
-                slider1.IsMoveToPointEnabled = true;
-
-                // disable UI
-                slider1.IsEnabled = false;
-                B1.IsEnabled = false;
-                B2.IsEnabled = false;
-                B3.IsEnabled = false;
-                check1.IsEnabled = false;
-                check1.Content = "Loading...";
-                check2.IsEnabled = false;
-                check3.IsEnabled = false;
-
-                // audio
-                audioLoading = true;
-
                 // get samples
-                using (AudioFileReader reader = new AudioFileReader(filename)) {
-                    byte[] buffer = new byte[reader.Length];
-                    int read = reader.Read(buffer, 0, buffer.Length);
+                //using (AudioFileReader reader = new AudioFileReader(filename)) {
 
-                    short[] sampleBuffer = new short[read / 2];
-                    Buffer.BlockCopy(buffer, 0, sampleBuffer, 0, read);
+                // read
+                byte[] buffer = new byte[getReader().Length];
+                int read = getReader().Read(buffer, 0, buffer.Length);
 
-                    pcm = sampleBuffer;
+                //check1.Content = read.ToString() + " " + read2.ToString();
 
-                    slider1.Maximum = pcm.Length - getSampleSize();
+                // sample
+                pcm = new short[read / 2];
+                Buffer.BlockCopy(buffer, 0, pcm, 0, read);
+
+                // samples
+                samples = new double[(int)(pcm.Length / getSampleSize())][];
+
+                for (int j = 0; j < pcm.Length / getSampleSize(); j++) {
+                    // define a sample
+                    samples[j] = new double[getSampleSize()];
+
+                    // fill it with data
+                    for (int i = 0; i < samples[j].Length; i++) {
+                        samples[j][i] = pcm[(getSampleSize() * j) + i];
+                    }
                 }
 
-                enable();
+                /*
+                for (int i = 0; i < samples.Length - getSampleSize() - 1; i+=getSampleSize()) {
+
+                    for (int j = 0; j < getSampleSize(); j++) {
+                        samples[i / getSampleSize()][j] = data[i + j];
+                    }
+                }*/
+
+                // windows
+                double[][] windows = new double[samples.Length][];
+
+                for (int i = 0; i < samples.Length; i++) {
+                    windows[i] = getWindow(samples[i]);
+                }
+
+                
+
+                // configure slider
+                slider1.Maximum = pcm.Length - getSampleSize();
+                slider1.Value = 0;
+                slider1.IsMoveToPointEnabled = true;
+                setReadPosition(0);
+
+                // dispatch timer
+                dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+                dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+                dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0, 1);
+                dispatcherTimer.Start();
             } else {
                 MessageBox.Show("No file selected.", "No file", MessageBoxButton.OK, MessageBoxImage.Warning);
                 dump();
                 Application.Current.Shutdown();
             }
+        }
+
+        private void dispatcherTimer_Tick(object? sender, EventArgs e) {
+            slider1.Value = (int)(getReadPosition() / 2);
         }
 
         /// <summary>
@@ -87,40 +118,22 @@ namespace Audio_visual_app {
 
             return dialog.FileName;
         }
-
-        private void enable() {
-            // enable/disable
-            audioLoading = false;
-            B1.IsEnabled = true;
-            B2.IsEnabled = true;
-            B3.IsEnabled = true;
-
-            // loaded check box
-            check1.IsChecked = true;
-            check1.Content = "Loaded.";
-
-            // slider modify
-            slider1.IsEnabled = true;
-            setReadPosition(0);
-        }
         
         /// <summary>
         /// When the slider changes value
         /// </summary>
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            // floor slider
-            slider1.Value = Math.Floor(slider1.Value);
-
             // move slider
-            if (slider1.Value != getReadPosition() && !audioLoading) {
-                setReadPosition((int)slider1.Value);
+            if (slider1.Value != getReadPosition()) {
+                getReader().Position = ((int)slider1.Value * 2);
             }
 
+            check1.Content = samples[(int)(slider1.Value / getSampleSize())];
+            check2.Content = samples[(int)(slider1.Value / getSampleSize())].Sum();
+
+            /*
             // Playback label
             label1.Content = slider1.Value + " / " + slider1.Maximum;
-
-            // Value
-            check2.Content = pcm[(int)slider1.Value];
 
             // read 32 pcm
             double[] sample = new double[getSampleSize()];
@@ -129,7 +142,25 @@ namespace Audio_visual_app {
                 sample[i] = pcm[(int)slider1.Value + i];
             }
 
-            check3.Content = GetMagnitudes(PerformFFT(sample)).Max();
+            // Value
+            check2.Content = sample.Sum();
+
+            canvas1.Children.Clear();
+
+            for (int i = 0; i < windows[(int)slider1.Value].Length; i++) {
+                Line line = new Line();
+                line.Visibility = System.Windows.Visibility.Visible;
+                line.StrokeThickness = 1;
+                line.Stroke = System.Windows.Media.Brushes.Black;
+                line.X1 = i;
+                line.X2 = i;
+                line.Y1 = 0;
+                line.Y2 = (windows[(int)slider1.Value][i] / 2);
+                canvas1.Children.Add(line);
+            }
+
+            check3.Content = GetMagnitudes(PerformFFT(getWindow(sample))).Max() > 0;
+            */
         }
         
         /// <summary>
@@ -138,9 +169,7 @@ namespace Audio_visual_app {
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void Button_Click_1(object sender, RoutedEventArgs e) {
-            if (!audioLoading) { 
-                StartPlayback(); 
-            }
+            StartPlayback(); 
         }
 
         /// <summary>
@@ -149,9 +178,7 @@ namespace Audio_visual_app {
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void Button_Click_2(object sender, RoutedEventArgs e) {
-            if (!audioLoading) {
-                PausePlayback();
-            }
+            PausePlayback();
         }
 
         /// <summary>
@@ -160,16 +187,12 @@ namespace Audio_visual_app {
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void Button_Click_3(object sender, RoutedEventArgs e) {
-            if (!audioLoading) {
-                StopPlayback();
-            }
+            StopPlayback();
         }
 
         private void RadioButton_Checked(object sender, RoutedEventArgs e) {
 
         }
-
-        
 
         private void check1_Checked(object sender, RoutedEventArgs e) {
 

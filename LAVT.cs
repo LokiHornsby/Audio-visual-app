@@ -1,12 +1,18 @@
 using FftSharp;
 using NAudio.Wave;
 using System.IO;
+using System.IO.Pipes;
 
 namespace Audio_visual_app {
     public static class LAVT { // Loki's audio visual toolkit
         // Audio variables
         private static WaveOutEvent outputDevice;
         private static Mp3FileReader reader;
+
+        // Naudio extras plugin
+        private static IWavePlayer playbackDevice;
+        private static WaveStream fileStream;
+        public static double[] data;
 
         // Playing?
         private static bool playing = false;
@@ -23,6 +29,15 @@ namespace Audio_visual_app {
             // audio file reader
             reader = new Mp3FileReader(filename);
             outputDevice.Init(reader);
+
+            /*var inputStream = new AudioFileReader(filename);
+            fileStream = inputStream;
+            var aggregator = new SampleAggregator(inputStream);
+            aggregator.NotificationCount = inputStream.WaveFormat.SampleRate / 100;
+            aggregator.PerformFFT = true;
+            aggregator.FftCalculated += FftCalculated;
+            aggregator.MaximumCalculated += MaximumCalculated;
+            playbackDevice.Init(aggregator);*/
         }
 
         public static bool GetOnset(double[] sample) {
@@ -104,7 +119,7 @@ namespace Audio_visual_app {
         }
 
         public static int getSampleSize() {
-            return 32;
+            return 1024;
         }
 
         public static int getSampleReadLength() {
@@ -117,21 +132,6 @@ namespace Audio_visual_app {
 
         public static Mp3FileReader getReader() {
             return reader;
-        }
-
-        /// <summary>
-        /// Get 32
-        /// </summary>
-        public static double[] GetSample() {
-            // array of floats
-            double[] sample = new double[getSampleSize()];
-
-            for (int i = 0; i < sample.Length; i++) {
-                // convert array to float
-                //sample[i] = BitConverter.ToDouble(getByte(), 0);
-            }
-
-            return sample;
         }
 
         public static int GetTotalMilliseconds() {
@@ -164,15 +164,17 @@ namespace Audio_visual_app {
             return (x != 0) && ((x & (x - 1)) == 0);
         }
 
+        public static double[] getWindow(double[] signal) {
+            // Shape the signal using a Hanning window
+            var window = new FftSharp.Windows.Hanning();
+            return window.Apply(signal);
+        }
+
         /// <summary>
         /// Peform FFT on input sample
         /// </summary>
         /// <returns></returns>
         public static System.Numerics.Complex[] PerformFFT(double[] signal) {
-            // Shape the signal using a Hanning window
-            var window = new FftSharp.Windows.Hanning();
-            double[] windowed = window.Apply(signal);
-
             // Calculate the FFT as an array of complex numbers
             System.Numerics.Complex[] spectrum = FFT.Forward(signal);
 
@@ -205,24 +207,6 @@ namespace Audio_visual_app {
         /// <returns></returns>
         public static double[] GetFrequencies(System.Numerics.Complex[] spectrum) {
              return FFT.FrequencyScale(GetPowers(spectrum).Length, reader.WaveFormat.SampleRate);
-        }
-
-        /// <summary>
-        /// Get onsets in a sample
-        /// </summary>
-        public static double[] GetOnset(double[] powerFFT, int sensitivity) {
-            double[] onsets = new double[powerFFT.Length];
-            int max = (int)powerFFT.Max();
-
-            for (int i = 0; i < onsets.Length; i++) {
-                if (powerFFT[i] > max / 2) {
-                    onsets[i] = powerFFT[i];
-                } else {
-                    onsets[i] = 0;
-                }
-            }
-
-            return onsets;
         }
     }
 }
