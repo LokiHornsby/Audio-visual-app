@@ -1,5 +1,6 @@
 ﻿using NAudio.Wave;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Shapes;
@@ -20,7 +21,6 @@ namespace Audio_visual_app {
         double[][] samples;
         double[][] windows;
         System.Numerics.Complex[][] ffts;
-
 
         /// <summary>
         /// Initialise window
@@ -63,22 +63,19 @@ namespace Audio_visual_app {
                     }
                 }
 
-                /*
-                for (int i = 0; i < samples.Length - getSampleSize() - 1; i+=getSampleSize()) {
-
-                    for (int j = 0; j < getSampleSize(); j++) {
-                        samples[i / getSampleSize()][j] = data[i + j];
-                    }
-                }*/
-
                 // windows
-                double[][] windows = new double[samples.Length][];
+                windows = new double[samples.Length][];
 
                 for (int i = 0; i < samples.Length; i++) {
                     windows[i] = getWindow(samples[i]);
                 }
 
-                
+                // ffts
+                ffts = new System.Numerics.Complex[windows.Length][];
+
+                for (int i = 0; i < windows.Length; i++) {
+                    ffts[i] = PerformFFT(windows[i]);
+                }
 
                 // configure slider
                 slider1.Maximum = pcm.Length - getSampleSize();
@@ -128,8 +125,26 @@ namespace Audio_visual_app {
                 getReader().Position = ((int)slider1.Value * 2);
             }
 
-            check1.Content = samples[(int)(slider1.Value / getSampleSize())];
-            check2.Content = samples[(int)(slider1.Value / getSampleSize())].Sum();
+            int pos = (int)(slider1.Value / getSampleSize());
+
+            check1.Content = samples[pos][0];
+            check2.Content = windows[pos][0];
+            check3.Content = ffts[pos][0].Real;
+
+            canvas1.Children.Clear();
+
+            for (int i = 0; i < windows[pos].Length; i++) {
+                Line line = new Line();
+                line.Visibility = System.Windows.Visibility.Visible;
+                line.StrokeThickness = 1;
+                line.Stroke = System.Windows.Media.Brushes.Black;
+                line.X1 = i;
+                line.X2 = i;
+                line.Y1 = 0;
+                line.Y2 = (windows[pos][i] / 2);
+                canvas1.Children.Add(line);
+            }
+
 
             /*
             // Playback label
