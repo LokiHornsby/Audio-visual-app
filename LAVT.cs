@@ -2,6 +2,7 @@ using FftSharp;
 using NAudio.Wave;
 using System.IO;
 using System.IO.Pipes;
+using System.Text;
 
 namespace Audio_visual_app {
     public static class LAVT { // Loki's audio visual toolkit
@@ -9,10 +10,14 @@ namespace Audio_visual_app {
         private static WaveOutEvent outputDevice;
         private static Mp3FileReader reader;
 
-        // Naudio extras plugin
-        private static IWavePlayer playbackDevice;
-        private static WaveStream fileStream;
-        public static double[] data;
+        // arrays
+        public static short[] pcm;
+        public static double[][] samples;
+        public static double[][] windows;
+        public static System.Numerics.Complex[][] ffts;
+        public static double[][] frequencies;
+        public static double[][] magnitudes;
+        public static double[][] powers;
 
         // Playing?
         private static bool playing = false;
@@ -30,18 +35,40 @@ namespace Audio_visual_app {
             reader = new Mp3FileReader(filename);
             outputDevice.Init(reader);
 
-            /*var inputStream = new AudioFileReader(filename);
-            fileStream = inputStream;
-            var aggregator = new SampleAggregator(inputStream);
-            aggregator.NotificationCount = inputStream.WaveFormat.SampleRate / 100;
-            aggregator.PerformFFT = true;
-            aggregator.FftCalculated += FftCalculated;
-            aggregator.MaximumCalculated += MaximumCalculated;
-            playbackDevice.Init(aggregator);*/
-        }
+            byte[] buffer = new byte[getReader().Length];
+            int read = getReader().Read(buffer, 0, buffer.Length);
 
-        public static bool GetOnset(double[] sample) {
-            return (sample.Sum() > 0);
+            // sample
+            pcm = new short[read / 2];
+            Buffer.BlockCopy(buffer, 0, pcm, 0, read);
+
+            // samples
+            samples = new double[(int)(pcm.Length / getSampleSize())][];
+
+            for (int j = 0; j < pcm.Length / getSampleSize(); j++) {
+                // define a sample
+                samples[j] = new double[getSampleSize()];
+
+                // fill it with data
+                for (int i = 0; i < samples[j].Length; i++) {
+                    samples[j][i] = pcm[(getSampleSize() * j) + i];
+                }
+            }
+
+            // populate with data
+            windows = new double[samples.Length][];
+            ffts = new System.Numerics.Complex[samples.Length][];
+            frequencies = new double[samples.Length][];
+            magnitudes = new double[samples.Length][];
+            powers = new double[samples.Length][];
+
+            for (int i = 0; i < samples.Length; i++) {
+                windows[i] = getWindow(samples[i]);
+                ffts[i] = PerformFFT(windows[i]);
+                frequencies[i] = GetFrequencies(ffts[i]);
+                magnitudes[i] = GetMagnitudes(ffts[i]);
+                powers[i] = GetPowers(ffts[i]);
+            }
         }
 
         /// <summary>
@@ -65,15 +92,6 @@ namespace Audio_visual_app {
                 reader.Dispose();
                 reader = null;
             }
-        }
-
-
-        /// <summary>
-        /// Get total length of the audio
-        /// </summary>
-        /// <returns></returns>
-        public static TimeSpan GetTotalTime() {
-            return reader.TotalTime;
         }
 
         /// <summary>
@@ -110,60 +128,36 @@ namespace Audio_visual_app {
             outputDevice.Play();
         }
 
-        public static long getReadPosition() {
-            return reader.Position;
-        }
-
-        public static long getReadLength() {
-            return reader.Length;
-        }
-
+        /// <summary>
+        /// Get sample size
+        /// </summary>
+        /// <returns></returns>
         public static int getSampleSize() {
-            return 1024;
+            return 16;
         }
 
-        public static int getSampleReadLength() {
-            return (int)(getReadLength() / getSampleSize());
-        }
-
-        public static int getSampleReadPosition() {
-            return (int)(getReadPosition() / getSampleSize());
-        }
-
+        /// <summary>
+        /// Get reader
+        /// </summary>
+        /// <returns></returns>
         public static Mp3FileReader getReader() {
             return reader;
         }
 
-        public static int GetTotalMilliseconds() {
-            return (int)Math.Floor(reader.TotalTime.TotalMilliseconds);
-        }
-
-        public static int GetCurrentMilliseconds() {
-            return (int)Math.Floor(reader.CurrentTime.TotalMilliseconds);
-        }
-
         /// <summary>
-        /// Seek to a place in the audio
+        /// Is value a power of two?
         /// </summary>
-        /// <param name="s">position to seek to</param>
-        public static void SeekMilliseconds(int s) {
-            reader.CurrentTime = new TimeSpan (
-                0,
-                0,
-                0,
-                0,
-                s
-            );
-        }
-
-        public static void setReadPosition(int s) {
-            reader.Position = s;
-        }
-
+        /// <param name="x"></param>
+        /// <returns></returns>
         public static bool IsPowerOfTwo(ulong x) {
             return (x != 0) && ((x & (x - 1)) == 0);
         }
 
+        /// <summary>
+        /// Get window using input signal
+        /// </summary>
+        /// <param name="signal"></param>
+        /// <returns></returns>
         public static double[] getWindow(double[] signal) {
             // Shape the signal using a Hanning window
             var window = new FftSharp.Windows.Hanning();
@@ -171,7 +165,7 @@ namespace Audio_visual_app {
         }
 
         /// <summary>
-        /// Peform FFT on input sample
+        /// Peform FFT on input signal
         /// </summary>
         /// <returns></returns>
         public static System.Numerics.Complex[] PerformFFT(double[] signal) {

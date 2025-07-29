@@ -1,4 +1,5 @@
-﻿using NAudio.Wave;
+﻿using NAudio.Gui;
+using NAudio.Wave;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -16,11 +17,8 @@ namespace Audio_visual_app {
         // timer
         DispatcherTimer dispatcherTimer;
 
-        // arrays
-        short[] pcm;
-        double[][] samples;
-        double[][] windows;
-        System.Numerics.Complex[][] ffts;
+        // lines
+        List<Line[]> lines;
 
         /// <summary>
         /// Initialise window
@@ -37,51 +35,33 @@ namespace Audio_visual_app {
                 // LAVT (Loki's audio visual toolkit)
                 initialiseAudioVisualToolkit(filename);
 
-                // get samples
-                //using (AudioFileReader reader = new AudioFileReader(filename)) {
-
-                // read
-                byte[] buffer = new byte[getReader().Length];
-                int read = getReader().Read(buffer, 0, buffer.Length);
-
-                //check1.Content = read.ToString() + " " + read2.ToString();
-
-                // sample
-                pcm = new short[read / 2];
-                Buffer.BlockCopy(buffer, 0, pcm, 0, read);
-
-                // samples
-                samples = new double[(int)(pcm.Length / getSampleSize())][];
-
-                for (int j = 0; j < pcm.Length / getSampleSize(); j++) {
-                    // define a sample
-                    samples[j] = new double[getSampleSize()];
-
-                    // fill it with data
-                    for (int i = 0; i < samples[j].Length; i++) {
-                        samples[j][i] = pcm[(getSampleSize() * j) + i];
-                    }
-                }
-
-                // windows
-                windows = new double[samples.Length][];
-
-                for (int i = 0; i < samples.Length; i++) {
-                    windows[i] = getWindow(samples[i]);
-                }
-
-                // ffts
-                ffts = new System.Numerics.Complex[windows.Length][];
-
-                for (int i = 0; i < windows.Length; i++) {
-                    ffts[i] = PerformFFT(windows[i]);
-                }
-
                 // configure slider
                 slider1.Maximum = pcm.Length - getSampleSize();
                 slider1.Value = 0;
                 slider1.IsMoveToPointEnabled = true;
-                setReadPosition(0);
+                getReader().Position = 0;
+
+                // lines
+                /*
+                lines = new List<Line[]>();
+
+                for (int j = 0; j < windows.Length; j++) {
+                    Line[] linecollection = new Line[windows[j].Length];
+
+                    for (int i = 0; i < linecollection.Length; i++) {
+                        Line line = new Line();
+                        line.Visibility = System.Windows.Visibility.Visible;
+                        line.StrokeThickness = 1;
+                        line.Stroke = System.Windows.Media.Brushes.Black;
+                        line.X1 = (int)(canvas1.Width / 4) + i;
+                        line.X2 = line.X2 = line.X1;
+                        line.Y1 = 100;
+                        line.Y2 = 100 + (windows[j][i] / 2) / 100;
+                        linecollection[i] = line;
+                    }
+
+                    lines.Add(linecollection);
+                }*/
 
                 // dispatch timer
                 dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
@@ -93,10 +73,6 @@ namespace Audio_visual_app {
                 dump();
                 Application.Current.Shutdown();
             }
-        }
-
-        private void dispatcherTimer_Tick(object? sender, EventArgs e) {
-            slider1.Value = (int)(getReadPosition() / 2);
         }
 
         /// <summary>
@@ -115,69 +91,50 @@ namespace Audio_visual_app {
 
             return dialog.FileName;
         }
-        
+
         /// <summary>
         /// When the slider changes value
         /// </summary>
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
             // move slider
-            if (slider1.Value != getReadPosition()) {
+            if (slider1.Value != getReader().Position) {
                 getReader().Position = ((int)slider1.Value * 2);
             }
 
+            // get time
+            label1.Content = getReader().Position + " / " + getReader().Length;
+
+            // get position
             int pos = (int)(slider1.Value / getSampleSize());
 
-            check1.Content = samples[pos][0];
-            check2.Content = windows[pos][0];
-            check3.Content = ffts[pos][0].Real;
+            // fill data
+            lbl1.Content = string.Join(",", frequencies[pos]);
+            lbl2.Content = string.Join(",", magnitudes[pos]);
+            lbl3.Content = string.Join(",", powers[pos]);
 
+            // draw waveform
             canvas1.Children.Clear();
 
             for (int i = 0; i < windows[pos].Length; i++) {
+                int x = (int)(canvas1.Width / 4) + i;
+                int y = (int)((windows[pos][i] / 2) / 100);
+
                 Line line = new Line();
                 line.Visibility = System.Windows.Visibility.Visible;
                 line.StrokeThickness = 1;
                 line.Stroke = System.Windows.Media.Brushes.Black;
-                line.X1 = i;
-                line.X2 = i;
+                line.X1 = x;
+                line.X2 = x;
                 line.Y1 = 0;
-                line.Y2 = (windows[pos][i] / 2);
+                line.Y2 = y;
                 canvas1.Children.Add(line);
             }
-
-
-            /*
-            // Playback label
-            label1.Content = slider1.Value + " / " + slider1.Maximum;
-
-            // read 32 pcm
-            double[] sample = new double[getSampleSize()];
-
-            for (int i = 0; i < getSampleSize(); i++) {
-                sample[i] = pcm[(int)slider1.Value + i];
-            }
-
-            // Value
-            check2.Content = sample.Sum();
-
-            canvas1.Children.Clear();
-
-            for (int i = 0; i < windows[(int)slider1.Value].Length; i++) {
-                Line line = new Line();
-                line.Visibility = System.Windows.Visibility.Visible;
-                line.StrokeThickness = 1;
-                line.Stroke = System.Windows.Media.Brushes.Black;
-                line.X1 = i;
-                line.X2 = i;
-                line.Y1 = 0;
-                line.Y2 = (windows[(int)slider1.Value][i] / 2);
-                canvas1.Children.Add(line);
-            }
-
-            check3.Content = GetMagnitudes(PerformFFT(getWindow(sample))).Max() > 0;
-            */
         }
-        
+
+        private void dispatcherTimer_Tick(object? sender, EventArgs e) {
+            slider1.Value = (int)(getReader().Position / 2);
+        }
+
         /// <summary>
         /// Play
         /// </summary>
