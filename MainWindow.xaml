@@ -270,7 +270,8 @@
         <Button Name="B1" Content="Play" HorizontalAlignment="Left" Margin="25,33,0,0" VerticalAlignment="Top" Click="Button_Click_1" Height="20" Width="26"/>
         <Button Name="B2" Content="Pause" HorizontalAlignment="Left" Margin="56,33,0,0" VerticalAlignment="Top" Click="Button_Click_2" Height="20" Width="34"/>
         <Button Name="B3" Content="Stop" HorizontalAlignment="Left" Margin="95,33,0,0" VerticalAlignment="Top" Click="Button_Click_3" Height="20" Width="28"/>
-        <Canvas Name="canvas1" Margin="25,78,0,277"/>
-        <CheckBox Name="check1" Content="Onset" HorizontalAlignment="Left" Margin="25,58,0,0" VerticalAlignment="Top"/>
+        <Canvas Name="canvas1" Margin="25,119,0,236"/>
+        <CheckBox Name="check1" Content="Onset" HorizontalAlignment="Left" Margin="25,58,0,0" VerticalAlignment="Top" Width="175"/>
+        <CheckBox Name="check2" Content="Frequency: " HorizontalAlignment="Left" Margin="25,78,0,0" VerticalAlignment="Top" Checked="check2_Checked" Width="175"/>
     </Grid>
 </Window>

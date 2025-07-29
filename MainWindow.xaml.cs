@@ -116,6 +116,19 @@ namespace Audio_visual_app {
             if (pos > 0) {
                 check1.IsChecked = (magnitudes[pos].Sum() > magnitudes[pos - 1].Sum());
             }
+
+            // get frequency
+            double frequency = 0;
+            double power = 0;
+
+            for (int i = 0; i < powers[pos].Length; i++) {
+                if (powers[pos][i] > power) {
+                    power = powers[pos][i];
+                    frequency = frequencies[pos][i];
+                }
+            }
+
+            check2.Content = frequency; 
         }
 
         /// <summary>
@@ -150,6 +163,10 @@ namespace Audio_visual_app {
         }
 
         private void check1_Checked(object sender, RoutedEventArgs e) {
+
+        }
+
+        private void check2_Checked(object sender, RoutedEventArgs e) {
 
         }
     }

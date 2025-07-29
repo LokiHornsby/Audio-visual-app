@@ -200,7 +200,7 @@ namespace Audio_visual_app {
         /// <param name="spectrum"></param>
         /// <returns></returns>
         public static double[] GetFrequencies(System.Numerics.Complex[] spectrum) {
-             return FFT.FrequencyScale(GetPowers(spectrum).Length, reader.WaveFormat.SampleRate);
+             return FFT.FrequencyScale(GetPowers(spectrum).Length, getReader().WaveFormat.SampleRate);
         }
     }
 }
