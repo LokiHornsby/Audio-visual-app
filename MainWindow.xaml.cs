@@ -41,28 +41,6 @@ namespace Audio_visual_app {
                 slider1.IsMoveToPointEnabled = true;
                 getReader().Position = 0;
 
-                // lines
-                /*
-                lines = new List<Line[]>();
-
-                for (int j = 0; j < windows.Length; j++) {
-                    Line[] linecollection = new Line[windows[j].Length];
-
-                    for (int i = 0; i < linecollection.Length; i++) {
-                        Line line = new Line();
-                        line.Visibility = System.Windows.Visibility.Visible;
-                        line.StrokeThickness = 1;
-                        line.Stroke = System.Windows.Media.Brushes.Black;
-                        line.X1 = (int)(canvas1.Width / 4) + i;
-                        line.X2 = line.X2 = line.X1;
-                        line.Y1 = 100;
-                        line.Y2 = 100 + (windows[j][i] / 2) / 100;
-                        linecollection[i] = line;
-                    }
-
-                    lines.Add(linecollection);
-                }*/
-
                 // dispatch timer
                 dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
                 dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
@@ -107,32 +85,37 @@ namespace Audio_visual_app {
             // get position
             int pos = (int)(slider1.Value / getSampleSize());
 
-            // fill data
-            lbl1.Content = string.Join(",", frequencies[pos]);
-            lbl2.Content = string.Join(",", magnitudes[pos]);
-            lbl3.Content = string.Join(",", powers[pos]);
+            
+        }
+
+        private void dispatcherTimer_Tick(object? sender, EventArgs e) {
+            slider1.Value = (int)(getReader().Position / 2);
+
+            // position in array
+            int pos = (int)(slider1.Value / getSampleSize());
 
             // draw waveform
             canvas1.Children.Clear();
 
             for (int i = 0; i < windows[pos].Length; i++) {
-                int x = (int)(canvas1.Width / 4) + i;
+                int x = i;
                 int y = (int)((windows[pos][i] / 2) / 100);
 
                 Line line = new Line();
                 line.Visibility = System.Windows.Visibility.Visible;
                 line.StrokeThickness = 1;
                 line.Stroke = System.Windows.Media.Brushes.Black;
-                line.X1 = x;
-                line.X2 = x;
-                line.Y1 = 0;
-                line.Y2 = y;
+                line.X1 = x + 10;
+                line.X2 = x + 10;
+                line.Y1 = 10;
+                line.Y2 = 10 + y;
                 canvas1.Children.Add(line);
             }
-        }
 
-        private void dispatcherTimer_Tick(object? sender, EventArgs e) {
-            slider1.Value = (int)(getReader().Position / 2);
+            // onset
+            if (pos > 0) {
+                check1.IsChecked = (magnitudes[pos].Sum() > magnitudes[pos - 1].Sum());
+            }
         }
 
         /// <summary>

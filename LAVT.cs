@@ -133,7 +133,7 @@ namespace Audio_visual_app {
         /// </summary>
         /// <returns></returns>
         public static int getSampleSize() {
-            return 16;
+            return 64;
         }
 
         /// <summary>
