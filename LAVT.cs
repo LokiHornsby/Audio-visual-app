@@ -7,17 +7,13 @@ using System.Text;
 namespace Audio_visual_app {
     public static class LAVT { // Loki's audio visual toolkit
         // Audio variables
-        private static WaveOutEvent outputDevice;
-        private static Mp3FileReader reader;
+        public static WaveOutEvent outputDevice;
+        public static Mp3FileReader reader;
+        public static WaveFormat format;
+        public static int sampleSize = 1024;
 
-        // arrays
-        public static short[] pcm;
-        public static double[][] samples;
-        public static double[][] windows;
-        public static System.Numerics.Complex[][] ffts;
-        public static double[][] frequencies;
-        public static double[][] magnitudes;
-        public static double[][] powers;
+        // raw data
+        static short[] pcm;
 
         // Playing?
         private static bool playing = false;
@@ -29,46 +25,21 @@ namespace Audio_visual_app {
         public static void initialiseAudioVisualToolkit(string filename) {
             // output device
             outputDevice = new WaveOutEvent();
-            outputDevice.PlaybackStopped += OutputDevice_PlaybackStopped;
 
             // audio file reader
             reader = new Mp3FileReader(filename);
+            reader.ToSampleProvider();
             outputDevice.Init(reader);
 
-            byte[] buffer = new byte[getReader().Length];
-            int read = getReader().Read(buffer, 0, buffer.Length);
+            // format
+            format = new WaveFormat(reader.WaveFormat.SampleRate, reader.WaveFormat.Channels);
+
+            byte[] buffer = new byte[reader.Length];
+            int read = reader.Read(buffer, 0, buffer.Length);
 
             // sample
             pcm = new short[read / 2];
             Buffer.BlockCopy(buffer, 0, pcm, 0, read);
-
-            // samples
-            samples = new double[(int)(pcm.Length / getSampleSize())][];
-
-            for (int j = 0; j < pcm.Length / getSampleSize(); j++) {
-                // define a sample
-                samples[j] = new double[getSampleSize()];
-
-                // fill it with data
-                for (int i = 0; i < samples[j].Length; i++) {
-                    samples[j][i] = pcm[(getSampleSize() * j) + i];
-                }
-            }
-
-            // populate with data
-            windows = new double[samples.Length][];
-            ffts = new System.Numerics.Complex[samples.Length][];
-            frequencies = new double[samples.Length][];
-            magnitudes = new double[samples.Length][];
-            powers = new double[samples.Length][];
-
-            for (int i = 0; i < samples.Length; i++) {
-                windows[i] = getWindow(samples[i]);
-                ffts[i] = PerformFFT(windows[i]);
-                frequencies[i] = GetFrequencies(ffts[i]);
-                magnitudes[i] = GetMagnitudes(ffts[i]);
-                powers[i] = GetPowers(ffts[i]);
-            }
         }
 
         /// <summary>
@@ -99,9 +70,7 @@ namespace Audio_visual_app {
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private static void OutputDevice_PlaybackStopped(object? sender, StoppedEventArgs e) {
-            StopPlayback();
-        }
+        
 
         /// <summary>
         /// Stop the audio
@@ -113,44 +82,22 @@ namespace Audio_visual_app {
         }
 
         /// <summary>
-        /// Pause the audio
-        /// </summary>
-        public static void PausePlayback() {
-            playing = false;
-            outputDevice.Pause();
-        }
-
-        /// <summary>
         /// Start the audio
         /// </summary>
         public static void StartPlayback() {
             playing = true;
+            reader.Position = 0;
             outputDevice.Play();
         }
 
-        /// <summary>
-        /// Get sample size
-        /// </summary>
-        /// <returns></returns>
-        public static int getSampleSize() {
-            return 64;
-        }
+        public static double[] getSignal(int offset) {
+            double[] signal = new double[sampleSize];
 
-        /// <summary>
-        /// Get reader
-        /// </summary>
-        /// <returns></returns>
-        public static Mp3FileReader getReader() {
-            return reader;
-        }
+            for (int i = 0; i < signal.Length; i++) {
+                signal[i] = (double)pcm[offset + i];
+            }
 
-        /// <summary>
-        /// Is value a power of two?
-        /// </summary>
-        /// <param name="x"></param>
-        /// <returns></returns>
-        public static bool IsPowerOfTwo(ulong x) {
-            return (x != 0) && ((x & (x - 1)) == 0);
+            return signal;
         }
 
         /// <summary>
@@ -200,7 +147,7 @@ namespace Audio_visual_app {
         /// <param name="spectrum"></param>
         /// <returns></returns>
         public static double[] GetFrequencies(System.Numerics.Complex[] spectrum) {
-             return FFT.FrequencyScale(GetPowers(spectrum).Length, getReader().WaveFormat.SampleRate);
+             return FFT.FrequencyScale(GetPowers(spectrum).Length, format.SampleRate);
         }
     }
 }

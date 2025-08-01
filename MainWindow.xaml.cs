@@ -14,11 +14,17 @@ namespace Audio_visual_app {
         // file name
         string filename;
 
-        // timer
-        DispatcherTimer dispatcherTimer;
+        // slider
+        float seconds;
+        DispatcherTimer sliderTimer;
+        
+        // current index
+        int samplepos;
 
-        // lines
-        List<Line[]> lines;
+        // visuals
+        int i;
+        double[] window;
+        DispatcherTimer visualTimer;
 
         /// <summary>
         /// Initialise window
@@ -34,18 +40,35 @@ namespace Audio_visual_app {
             if (filename != "") {
                 // LAVT (Loki's audio visual toolkit)
                 initialiseAudioVisualToolkit(filename);
+                outputDevice.PlaybackStopped += OutputDevice_PlaybackStopped;
 
                 // configure slider
-                slider1.Maximum = pcm.Length - getSampleSize();
+                slider1.Maximum = reader.TotalTime.TotalSeconds;
                 slider1.Value = 0;
-                slider1.IsMoveToPointEnabled = true;
-                getReader().Position = 0;
+                slider1.IsMoveToPointEnabled = false;
+                slider1.IsEnabled = false;
 
-                // dispatch timer
-                dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
-                dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-                dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0, 1);
-                dispatcherTimer.Start();
+                // start timer
+                sliderTimer = new System.Windows.Threading.DispatcherTimer();
+                sliderTimer.Tick += new EventHandler(UpdateSlider);
+                sliderTimer.Interval = new TimeSpan(0, 0, 0, 1, 0, 0);
+
+                // draw waveform
+                for (int i = 0; i < sampleSize; i++) {
+                    Line line = new Line();
+                    line.StrokeThickness = 1;
+                    line.Stroke = System.Windows.Media.Brushes.Black;
+                    line.X1 = i;
+                    line.X2 = i;
+                    line.Y1 = 10;
+                    line.Y2 = 15;
+                    canvas1.Children.Add(line);
+                }
+
+                // start waveform visualisation timer
+                visualTimer = new System.Windows.Threading.DispatcherTimer();
+                visualTimer.Tick += new EventHandler(UpdateVisuals);
+                visualTimer.Interval = new TimeSpan(0, 0, 0, 1, 0, 0);
             } else {
                 MessageBox.Show("No file selected.", "No file", MessageBoxButton.OK, MessageBoxImage.Warning);
                 dump();
@@ -70,104 +93,85 @@ namespace Audio_visual_app {
             return dialog.FileName;
         }
 
+        void stop() {
+            StopPlayback();
+            sliderTimer.Stop();
+            visualTimer.Stop();
+            B1.Content = "Start";
+            slider1.Value = 0;
+            i = 0;
+            samplepos = 0;
+            seconds = 0;
+
+            UpdateSlider(null, null);
+            UpdateVisuals(null, null);
+        }
+
+        void start() {
+            StartPlayback();
+            sliderTimer.Start();
+            visualTimer.Start();
+            B1.Content = "Stop";
+        }
+
         /// <summary>
-        /// When the slider changes value
+        /// When the song ends
         /// </summary>
-        private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            // move slider
-            if (slider1.Value != getReader().Position) {
-                getReader().Position = ((int)slider1.Value * 2);
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OutputDevice_PlaybackStopped(object? sender, StoppedEventArgs e) {
+            stop();
+        }
+
+        /// <summary>
+        /// Toggle playback state
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Toggle(object sender, RoutedEventArgs e) {
+            if (!isPlaying()) {
+                start();
+            } else {
+                stop();
             }
+        }
+
+        /// <summary>
+        /// Timer
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void UpdateSlider(object? sender, EventArgs e) {
+            // slider
+            slider1.Value = seconds;
 
             // get time
-            label1.Content = getReader().Position + " / " + getReader().Length;
+            label1.Content = seconds;
 
-            // get position
-            int pos = (int)(slider1.Value / getSampleSize());
+            // current position
+            seconds += 1;
+            samplepos += format.SampleRate;
+            i = 0;
 
-            
+            // audio calculations
+            double[] signal = getSignal((int)samplepos);
+            window = getWindow(signal);
+            System.Numerics.Complex[] fft = PerformFFT(window);
+
+            // 
+            check1.IsChecked = GetMagnitudes(fft).Sum() > 0;
         }
 
-        private void dispatcherTimer_Tick(object? sender, EventArgs e) {
-            slider1.Value = (int)(getReader().Position / 2);
+        public void UpdateVisuals(object? sender, EventArgs e) {
+            foreach (var c in canvas1.Children.OfType<Line>()) {
+                c.Y2 = 15 + window[i];
 
-            // position in array
-            int pos = (int)(slider1.Value / getSampleSize());
-
-            // draw waveform
-            canvas1.Children.Clear();
-
-            for (int i = 0; i < windows[pos].Length; i++) {
-                int x = i;
-                int y = (int)((windows[pos][i] / 2) / 100);
-
-                Line line = new Line();
-                line.Visibility = System.Windows.Visibility.Visible;
-                line.StrokeThickness = 1;
-                line.Stroke = System.Windows.Media.Brushes.Black;
-                line.X1 = x + 10;
-                line.X2 = x + 10;
-                line.Y1 = 10;
-                line.Y2 = 10 + y;
-                canvas1.Children.Add(line);
-            }
-
-            // onset
-            if (pos > 0) {
-                check1.IsChecked = (magnitudes[pos].Sum() > magnitudes[pos - 1].Sum());
-            }
-
-            // get frequency
-            double frequency = 0;
-            double power = 0;
-
-            for (int i = 0; i < powers[pos].Length; i++) {
-                if (powers[pos][i] > power) {
-                    power = powers[pos][i];
-                    frequency = frequencies[pos][i];
+                if (i != sampleSize - 1) {
+                    i++;
+                } else {
+                    i = 0;
                 }
             }
-
-            check2.Content = frequency; 
-        }
-
-        /// <summary>
-        /// Play
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Button_Click_1(object sender, RoutedEventArgs e) {
-            StartPlayback(); 
-        }
-
-        /// <summary>
-        /// Pause
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Button_Click_2(object sender, RoutedEventArgs e) {
-            PausePlayback();
-        }
-
-        /// <summary>
-        /// Stop
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Button_Click_3(object sender, RoutedEventArgs e) {
-            StopPlayback();
-        }
-
-        private void RadioButton_Checked(object sender, RoutedEventArgs e) {
-
-        }
-
-        private void check1_Checked(object sender, RoutedEventArgs e) {
-
-        }
-
-        private void check2_Checked(object sender, RoutedEventArgs e) {
-
         }
     }
 }
