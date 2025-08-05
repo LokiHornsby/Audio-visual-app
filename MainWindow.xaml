@@ -268,12 +268,18 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <Slider x:Name="slider1" Style="{DynamicResource SliderStyle1}" IsMoveToPointEnabled="True" HorizontalAlignment="Left" Margin="25,10,0,0" VerticalAlignment="Top" Width="350" Maximum="1" Height="18"/>
-        <Label x:Name="label1" Content="0" HorizontalAlignment="Left" Margin="128,33,0,0" VerticalAlignment="Top" AutomationProperties.Name="lbl" Height="20" Width="247" FontSize="10" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Padding="2,2,2,2"/>
+        <Slider Name="slider1" Style="{DynamicResource SliderStyle1}" IsMoveToPointEnabled="True" HorizontalAlignment="Left" Margin="25,10,0,0" VerticalAlignment="Top" Width="350" Maximum="1" Height="18" Delay="0"/>
+        <Label Name="label1" Content="0" HorizontalAlignment="Left" Margin="200,33,0,0" VerticalAlignment="Top" AutomationProperties.Name="lbl" Height="20" Width="175" FontSize="10" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Padding="2,2,2,2"/>
         <Button Name="B1" Content="Start
                 " HorizontalAlignment="Left" Margin="25,33,0,0" VerticalAlignment="Top" Click="Toggle" Height="20" Width="30" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
-        <Canvas Name="canvas1" Margin="25,98,0,257"/>
-        <CheckBox Name="check1" Content="Onset" HorizontalAlignment="Left" Margin="25,58,0,0" VerticalAlignment="Top" Width="175"/>
-        <CheckBox Name="check2" Content="Frequency: " HorizontalAlignment="Left" Margin="25,78,0,0" VerticalAlignment="Top" Width="175"/>
+        <Canvas Name="canvas1" Margin="151,212,0,10"/>
+        <CheckBox Name="check1" Content="Onset: false" HorizontalAlignment="Left" Margin="25,58,0,0" VerticalAlignment="Top" Width="175"/>
+        <CheckBox Name="check2" Content="Frequency: 0" HorizontalAlignment="Left" Margin="25,78,0,0" VerticalAlignment="Top" Width="175"/>
+        <Slider Name="band1" HorizontalAlignment="Left" Margin="25,212,0,0" VerticalAlignment="Top" Width="17" Orientation="Vertical" Height="181" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Maximum="30" IsMoveToPointEnabled="True" Minimum="-30" ValueChanged="band1_ValueChanged"/>
+        <Slider Name="band2" HorizontalAlignment="Left" Margin="47,212,0,0" VerticalAlignment="Top" Width="17" Orientation="Vertical" Height="181" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Maximum="30" IsMoveToPointEnabled="True" Minimum="-30" ValueChanged="band2_ValueChanged"/>
+        <Slider Name="band3" HorizontalAlignment="Left" Margin="68,212,0,0" VerticalAlignment="Top" Width="18" Orientation="Vertical" Height="181" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Maximum="30" IsMoveToPointEnabled="True" Minimum="-30" ValueChanged="band3_ValueChanged"/>
+        <Slider Name="band4" HorizontalAlignment="Left" Margin="90,212,0,0" VerticalAlignment="Top" Width="18" Orientation="Vertical" Height="181" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Maximum="30" IsMoveToPointEnabled="True" Minimum="-30" ValueChanged="band4_ValueChanged"/>
+        <Slider Name="band5" HorizontalAlignment="Left" Margin="112,212,0,0" VerticalAlignment="Top" Width="18" Orientation="Vertical" Height="181" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Maximum="30" IsMoveToPointEnabled="True" Minimum="-30" ValueChanged="band5_ValueChanged"/>
+        <CheckBox Name="check3" Content="BPM: 0" HorizontalAlignment="Left" Margin="25,98,0,0" VerticalAlignment="Top" Width="175"/>
     </Grid>
 </Window>

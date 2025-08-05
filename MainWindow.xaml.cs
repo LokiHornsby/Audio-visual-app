@@ -1,4 +1,5 @@
-﻿using NAudio.Gui;
+﻿using NAudio.Extras;
+using NAudio.Gui;
 using NAudio.Wave;
 using System.IO;
 using System.Linq;
@@ -11,20 +12,22 @@ namespace Audio_visual_app {
     using static LAVT;
 
     public partial class MainWindow : Window {
+
         // file name
-        string filename;
+        string filename = "";
+
+        // timers
+        DispatcherTimer timerTime = new System.Windows.Threading.DispatcherTimer();
+        DispatcherTimer timerGUI = new System.Windows.Threading.DispatcherTimer();
 
         // slider
-        float seconds;
-        DispatcherTimer sliderTimer;
-        
+        float seconds = 0f;
+
         // current index
-        int samplepos;
+        float samplepos = 0f;
 
         // visuals
-        int i;
-        double[] window;
-        DispatcherTimer visualTimer;
+        int i = 0;
 
         /// <summary>
         /// Initialise window
@@ -40,7 +43,17 @@ namespace Audio_visual_app {
             if (filename != "") {
                 // LAVT (Loki's audio visual toolkit)
                 initialiseAudioVisualToolkit(filename);
-                outputDevice.PlaybackStopped += OutputDevice_PlaybackStopped;
+                player.PlaybackStopped += OutputDevice_PlaybackStopped;
+
+                // checks
+                check2.IsChecked = true;
+
+                check3.Content = "BPM: " + GetBPM();
+                check3.IsChecked = true;
+
+                check1.IsEnabled = false;
+                check2.IsEnabled = false;
+                check3.IsEnabled = false;
 
                 // configure slider
                 slider1.Maximum = reader.TotalTime.TotalSeconds;
@@ -48,10 +61,13 @@ namespace Audio_visual_app {
                 slider1.IsMoveToPointEnabled = false;
                 slider1.IsEnabled = false;
 
-                // start timer
-                sliderTimer = new System.Windows.Threading.DispatcherTimer();
-                sliderTimer.Tick += new EventHandler(UpdateSlider);
-                sliderTimer.Interval = new TimeSpan(0, 0, 0, 1, 0, 0);
+                // timers
+                timerTime.Tick += new EventHandler(UpdateTime);
+                timerTime.Interval = new TimeSpan(0, 0, 0, 1, 0, 0); // seconds / 100 = 10 milliseconds
+
+                timerGUI.Tick += new EventHandler(UpdateGUI);
+                timerGUI.Interval = new TimeSpan(0, 0, 0, 0, 0, 1); // seconds / 100 = 10 milliseconds
+                timerGUI.Start();
 
                 // draw waveform
                 for (int i = 0; i < sampleSize; i++) {
@@ -64,11 +80,6 @@ namespace Audio_visual_app {
                     line.Y2 = 15;
                     canvas1.Children.Add(line);
                 }
-
-                // start waveform visualisation timer
-                visualTimer = new System.Windows.Threading.DispatcherTimer();
-                visualTimer.Tick += new EventHandler(UpdateVisuals);
-                visualTimer.Interval = new TimeSpan(0, 0, 0, 1, 0, 0);
             } else {
                 MessageBox.Show("No file selected.", "No file", MessageBoxButton.OK, MessageBoxImage.Warning);
                 dump();
@@ -95,22 +106,26 @@ namespace Audio_visual_app {
 
         void stop() {
             StopPlayback();
-            sliderTimer.Stop();
-            visualTimer.Stop();
+            timerTime.Stop();
             B1.Content = "Start";
             slider1.Value = 0;
             i = 0;
             samplepos = 0;
             seconds = 0;
-
-            UpdateSlider(null, null);
-            UpdateVisuals(null, null);
         }
 
         void start() {
+            bands[0].Gain = (int)band1.Value;
+            bands[1].Gain = (int)band2.Value;
+            bands[2].Gain = (int)band3.Value;
+            bands[3].Gain = (int)band4.Value;
+            bands[4].Gain = (int)band5.Value;
+            equalizer.Update();
+
+            UpdateSamples();
+
             StartPlayback();
-            sliderTimer.Start();
-            visualTimer.Start();
+            timerTime.Start();
             B1.Content = "Stop";
         }
 
@@ -129,7 +144,7 @@ namespace Audio_visual_app {
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void Toggle(object sender, RoutedEventArgs e) {
-            if (!isPlaying()) {
+            if (!isPlaying) {
                 start();
             } else {
                 stop();
@@ -141,37 +156,71 @@ namespace Audio_visual_app {
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void UpdateSlider(object? sender, EventArgs e) {
+        private void UpdateTime(object? sender, EventArgs e) {
+            // current position
+            seconds += 1f;
+            samplepos = format.SampleRate * seconds;
+        }
+
+        /// <summary>
+        /// Update GUI
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void UpdateGUI(object? sender, EventArgs e) {
             // slider
             slider1.Value = seconds;
 
             // get time
-            label1.Content = seconds;
-
-            // current position
-            seconds += 1;
-            samplepos += format.SampleRate;
-            i = 0;
+            label1.Content = (int)seconds + " : " + samplepos;
 
             // audio calculations
-            double[] signal = getSignal((int)samplepos);
-            window = getWindow(signal);
+            double[] signal = Array.ConvertAll(
+                pcm.Skip((int)samplepos).Take(sampleSize).ToArray(),
+                x => (double)x
+            );
+
+            double[] window = getWindow(signal);
             System.Numerics.Complex[] fft = PerformFFT(window);
+            double[] magnitudes = GetMagnitudes(fft);
 
-            // 
-            check1.IsChecked = GetMagnitudes(fft).Sum() > 0;
-        }
+            // onset
+            check1.IsChecked = magnitudes.Sum() > 0;
+            check1.Content = "Onset: " + check1.IsChecked;
 
-        public void UpdateVisuals(object? sender, EventArgs e) {
+            // frequency
+            check2.Content = "Frequency: " + "?";
+
+            // Visuals
+            i = 0;
+
             foreach (var c in canvas1.Children.OfType<Line>()) {
                 c.Y2 = 15 + window[i];
 
-                if (i != sampleSize - 1) {
+                if (i < sampleSize - 1) {
                     i++;
-                } else {
-                    i = 0;
                 }
             }
+        }
+
+        private void band5_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            if (isPlaying) { stop(); }
+        }
+
+        private void band4_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            if (isPlaying) { stop(); }
+        }
+
+        private void band3_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            if (isPlaying) { stop(); }
+        }
+
+        private void band2_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            if (isPlaying) { stop(); }
+        }
+
+        private void band1_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            if (isPlaying) { stop(); }
         }
     }
 }

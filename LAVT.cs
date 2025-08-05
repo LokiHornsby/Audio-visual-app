@@ -3,60 +3,85 @@ using NAudio.Wave;
 using System.IO;
 using System.IO.Pipes;
 using System.Text;
+using NAudio.Extras;
 
 namespace Audio_visual_app {
     public static class LAVT { // Loki's audio visual toolkit
         // Audio variables
-        public static WaveOutEvent outputDevice;
+        public static IWavePlayer player;
         public static Mp3FileReader reader;
         public static WaveFormat format;
-        public static int sampleSize = 1024;
+        public static int sampleSize = 64;
+        public static bool isPlaying = false;
+
+        // equalizer
+        public static Equalizer equalizer;
+        public static EqualizerBand[] bands;
+        public static bool equalizerinit;
 
         // raw data
-        static short[] pcm;
+        public static short[] pcm = new short[sampleSize];
 
-        // Playing?
-        private static bool playing = false;
+        public static void initEqualizer() {
+            // equalizer
+            bands = new EqualizerBand[5];
+
+            for (int i = 0; i < 5; i++) {
+                bands[i] = new EqualizerBand();
+                bands[i].Bandwidth = 0.5f;
+                bands[i].Gain = 0f;
+            }
+
+            bands[0].Frequency = 200;
+            bands[1].Frequency = 400;
+            bands[2].Frequency = 1200;
+            bands[3].Frequency = 4800;
+            bands[4].Frequency = 9600;
+
+            equalizerinit = true;
+        }
+
+        public static void UpdateSamples() {
+            // read
+            byte[] buffer = new byte[reader.Length];
+            // int read = equalizer.Read(buffer, 0, buffer.Length);
+            int read = reader.Read(buffer, 0, buffer.Length);
+
+            // sample
+            pcm = new short[read];
+            Buffer.BlockCopy(buffer, 0, pcm, 0, read);
+
+            // reset
+            reader.Position = 0;
+        }
 
         /// <summary>
         /// Initialise LAVT (Loki's audio visual toolkit)
         /// </summary>
         /// <param name="filename"></param>
         public static void initialiseAudioVisualToolkit(string filename) {
-            // output device
-            outputDevice = new WaveOutEvent();
+            if (!equalizerinit) { initEqualizer(); }
 
-            // audio file reader
+            // audio
             reader = new Mp3FileReader(filename);
-            reader.ToSampleProvider();
-            outputDevice.Init(reader);
+            equalizer = new Equalizer(reader.ToSampleProvider(), bands);
+            player = new WaveOutEvent();
+            player.Init(equalizer);
 
             // format
             format = new WaveFormat(reader.WaveFormat.SampleRate, reader.WaveFormat.Channels);
 
-            byte[] buffer = new byte[reader.Length];
-            int read = reader.Read(buffer, 0, buffer.Length);
-
-            // sample
-            pcm = new short[read / 2];
-            Buffer.BlockCopy(buffer, 0, pcm, 0, read);
-        }
-
-        /// <summary>
-        /// Is the audio playing?
-        /// </summary>
-        /// <returns></returns>
-        public static bool isPlaying() {
-            return playing;
+            // samples
+            UpdateSamples();
         }
 
         /// <summary>
         /// Dump audio variables
         /// </summary>
         public static void dump() {
-            if (outputDevice != null) {
-                outputDevice.Dispose();
-                outputDevice = null;
+            if (player != null) {
+                player.Dispose();
+                player = null;
             }
 
             if (reader != null) {
@@ -76,28 +101,18 @@ namespace Audio_visual_app {
         /// Stop the audio
         /// </summary>
         public static void StopPlayback() {
-            playing = false;
+            isPlaying = false;
             reader.Position = 0;
-            outputDevice.Stop();
+            player.Stop();
         }
 
         /// <summary>
         /// Start the audio
         /// </summary>
         public static void StartPlayback() {
-            playing = true;
+            isPlaying = true;
             reader.Position = 0;
-            outputDevice.Play();
-        }
-
-        public static double[] getSignal(int offset) {
-            double[] signal = new double[sampleSize];
-
-            for (int i = 0; i < signal.Length; i++) {
-                signal[i] = (double)pcm[offset + i];
-            }
-
-            return signal;
+            player.Play();
         }
 
         /// <summary>
@@ -148,6 +163,26 @@ namespace Audio_visual_app {
         /// <returns></returns>
         public static double[] GetFrequencies(System.Numerics.Complex[] spectrum) {
              return FFT.FrequencyScale(GetPowers(spectrum).Length, format.SampleRate);
+        }
+
+        public static float GetBPM() {
+            int bpm = 0;
+            double[] buffer = new double[sampleSize];
+            int offset = 0;
+            float e = 1.5f;
+
+            for (int i = 0; i < pcm.Length; i++) {
+                if (offset < format.SampleRate * 15) {
+                    if (i - offset < sampleSize - 1) {
+                        buffer[i - offset] = pcm[i];
+                    } else {
+                        if (GetPowers(PerformFFT(buffer)).Sum() > e) { bpm += 1; }
+                        offset = i;
+                    }
+                }
+            }
+
+            return bpm;
         }
     }
 }
