@@ -23,6 +23,8 @@ namespace Audio_visual_app {
         public static WaveStream pcmstream;
         public static int drl;
         public static int duration;
+        public static int samplesize = 128;
+        public static int datasize = 10;
         public static data_struct[][] data;
         public static double BPM; 
 
@@ -111,8 +113,8 @@ namespace Audio_visual_app {
         }
 
         public struct data_struct {
-            // Arrays
-            public double[] pcm;
+            double[] pcm;
+            public double[] sample;
             public bool onset;
             public double frequency;
 
@@ -122,7 +124,7 @@ namespace Audio_visual_app {
                 reader.Position = _position;
 
                 // get a one millisecond sample
-                byte[] buffer = new byte[drl / 10];
+                byte[] buffer = new byte[drl / datasize];
                 pcmstream.ReadExactly(buffer, 0, buffer.Length);
 
                 // convert to pcm
@@ -142,8 +144,8 @@ namespace Audio_visual_app {
                 var window = new FftSharp.Windows.Hanning();
                 pcm = window.Apply(pcm);
 
-                // get sample
-                double[] sample = new double[128];
+                // get a sample
+                sample = new double[samplesize];
 
                 for (int i = 0; i < sample.Length; i++) {
                     sample[i] = pcm[i];

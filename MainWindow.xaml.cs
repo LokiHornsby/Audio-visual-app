@@ -64,7 +64,7 @@ namespace Audio_visual_app {
                 canvas1.VerticalAlignment = VerticalAlignment.Bottom;
                 canvas1.HorizontalAlignment = HorizontalAlignment.Left;
 
-                for (int i = 0; i < 128; i++) {
+                for (int i = 0; i < LAVT.samplesize; i++) {
                     Line line = new Line();
                     line.StrokeThickness = 1;
                     line.Stroke = System.Windows.Media.Brushes.Black;
@@ -144,11 +144,7 @@ namespace Audio_visual_app {
         /// <param name="e"></param>
         private void UpdateGUI(object? sender, EventArgs e) {
             Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                if (active && seconds < LAVT.duration) {
-                    // GUI
-                    slider1.Value = seconds;
-                    label1.Content = seconds + "." + milliseconds + " / " + LAVT.duration;
-
+                if (seconds < LAVT.duration && active) {
                     // Select data
                     LAVT.data_struct d = LAVT.data[seconds][milliseconds];
 
@@ -161,13 +157,23 @@ namespace Audio_visual_app {
                     Line[] l = canvas1.Children.OfType<Line>().ToArray();
 
                     // update each line according to pcm data
-                    for (int j = 0; j < 128; j++) {
-                        l[j].Y2 = d.pcm[j]; // NO OUTPUT
+                    for (int j = 0; j < LAVT.samplesize; j++) {
+                        l[j].Y2 = d.sample[j];
                     }
 
-                    // increment time
+                    // Timing
                     milliseconds += 1;
-                    if (milliseconds == 10) { milliseconds = 0; seconds += 1; }
+
+                    if (milliseconds == LAVT.datasize) { 
+                        seconds += 1;
+                        milliseconds = 0;
+                    }
+
+                    // GUI
+                    slider1.Value = seconds;
+                    label1.Content = seconds + "." + milliseconds + " / " + LAVT.duration;
+                } else if (active) { 
+                    Toggle(null, null); 
                 }
             }));
         }
