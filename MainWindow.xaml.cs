@@ -9,31 +9,27 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace Audio_visual_app {
-    using static LAVT;
-
     public partial class MainWindow : Window {
-
         // file name
         string filename = "";
 
-        // timers
-        DispatcherTimer timerTime = new System.Windows.Threading.DispatcherTimer();
-        DispatcherTimer timerGUI = new System.Windows.Threading.DispatcherTimer();
+        // active
+        bool active = false;
 
-        // slider
-        float seconds = 0f;
-
-        // current index
-        float samplepos = 0f;
+        // timing
+        int seconds = 0;
+        int milliseconds = 0;
+        System.Timers.Timer timerGUI;
 
         // visuals
-        int i = 0;
+        int i;
+        int linepos;
 
         /// <summary>
         /// Initialise window
         /// </summary>
         public MainWindow(){
-            // initialise WPF
+            // initialise WPF (XAML)
             InitializeComponent();
 
             // Select file
@@ -42,47 +38,45 @@ namespace Audio_visual_app {
             // If file exists
             if (filename != "") {
                 // LAVT (Loki's audio visual toolkit)
-                initialiseAudioVisualToolkit(filename);
-                player.PlaybackStopped += OutputDevice_PlaybackStopped;
+                LAVT.Initialise(filename);
 
-                // checks
-                check2.IsChecked = true;
+                // GUI
+                slider1.Maximum = LAVT.duration;
 
-                check3.Content = "BPM: " + GetBPM();
-                check3.IsChecked = true;
+                timerGUI = new System.Timers.Timer(100); // 0.1 second
+                timerGUI.Elapsed += UpdateGUI;
+                timerGUI.Enabled = true;
+                timerGUI.AutoReset = true;
 
+                // GUI (update these on a thread)
+                //check3.Content = "BPM: " + GetBPM();
                 check1.IsEnabled = false;
+                check1.IsChecked = false;
                 check2.IsEnabled = false;
+                check2.IsChecked = true;
                 check3.IsEnabled = false;
-
-                // configure slider
-                slider1.Maximum = reader.TotalTime.TotalSeconds;
-                slider1.Value = 0;
-                slider1.IsMoveToPointEnabled = false;
+                check3.IsChecked = true;
                 slider1.IsEnabled = false;
 
-                // timers
-                timerTime.Tick += new EventHandler(UpdateTime);
-                timerTime.Interval = new TimeSpan(0, 0, 0, 1, 0, 0); // seconds / 100 = 10 milliseconds
-
-                timerGUI.Tick += new EventHandler(UpdateGUI);
-                timerGUI.Interval = new TimeSpan(0, 0, 0, 0, 0, 1); // seconds / 100 = 10 milliseconds
-                timerGUI.Start();
+                check3.Content = "BPM: " + LAVT.BPM;
 
                 // draw waveform
-                for (int i = 0; i < sampleSize; i++) {
+                canvas1.VerticalAlignment = VerticalAlignment.Bottom;
+                canvas1.HorizontalAlignment = HorizontalAlignment.Left;
+
+                for (int i = 0; i < 128; i++) {
                     Line line = new Line();
                     line.StrokeThickness = 1;
                     line.Stroke = System.Windows.Media.Brushes.Black;
                     line.X1 = i;
                     line.X2 = i;
-                    line.Y1 = 10;
+                    line.Y1 = 0;
                     line.Y2 = 15;
                     canvas1.Children.Add(line);
                 }
             } else {
                 MessageBox.Show("No file selected.", "No file", MessageBoxButton.OK, MessageBoxImage.Warning);
-                dump();
+                LAVT.dump();
                 Application.Current.Shutdown();
             }
         }
@@ -105,37 +99,27 @@ namespace Audio_visual_app {
         }
 
         void stop() {
-            StopPlayback();
-            timerTime.Stop();
+            // stop
+            LAVT.StopPlayback();
             B1.Content = "Start";
-            slider1.Value = 0;
-            i = 0;
-            samplepos = 0;
+
+            // reset
             seconds = 0;
+            milliseconds = 0;
         }
 
         void start() {
-            bands[0].Gain = (int)band1.Value;
-            bands[1].Gain = (int)band2.Value;
-            bands[2].Gain = (int)band3.Value;
-            bands[3].Gain = (int)band4.Value;
-            bands[4].Gain = (int)band5.Value;
-            equalizer.Update();
+            // update
+            LAVT.bands[0].Gain = (int)band1.Value;
+            LAVT.bands[1].Gain = (int)band2.Value;
+            LAVT.bands[2].Gain = (int)band3.Value;
+            LAVT.bands[3].Gain = (int)band4.Value;
+            LAVT.bands[4].Gain = (int)band5.Value;
+            LAVT.equalizer.Update();
 
-            UpdateSamples();
-
-            StartPlayback();
-            timerTime.Start();
+            // start
+            LAVT.StartPlayback();
             B1.Content = "Stop";
-        }
-
-        /// <summary>
-        /// When the song ends
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void OutputDevice_PlaybackStopped(object? sender, StoppedEventArgs e) {
-            stop();
         }
 
         /// <summary>
@@ -144,22 +128,13 @@ namespace Audio_visual_app {
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void Toggle(object sender, RoutedEventArgs e) {
-            if (!isPlaying) {
+            if (!active) {
                 start();
             } else {
                 stop();
             }
-        }
 
-        /// <summary>
-        /// Timer
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void UpdateTime(object? sender, EventArgs e) {
-            // current position
-            seconds += 1f;
-            samplepos = format.SampleRate * seconds;
+            active = !active;
         }
 
         /// <summary>
@@ -168,59 +143,54 @@ namespace Audio_visual_app {
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void UpdateGUI(object? sender, EventArgs e) {
-            // slider
-            slider1.Value = seconds;
+            Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                if (active && seconds < LAVT.duration) {
+                    // GUI
+                    slider1.Value = seconds;
+                    label1.Content = seconds + "." + milliseconds + " / " + LAVT.duration;
 
-            // get time
-            label1.Content = (int)seconds + " : " + samplepos;
+                    // Select data
+                    LAVT.data_struct d = LAVT.data[seconds][milliseconds];
 
-            // audio calculations
-            double[] signal = Array.ConvertAll(
-                pcm.Skip((int)samplepos).Take(sampleSize).ToArray(),
-                x => (double)x
-            );
+                    // use data
+                    check1.IsChecked = d.onset;
+                    check1.Content = "Onset: " + check1.IsChecked;
+                    check2.Content = "Frequency: " + d.frequency;
 
-            double[] window = getWindow(signal);
-            System.Numerics.Complex[] fft = PerformFFT(window);
-            double[] magnitudes = GetMagnitudes(fft);
+                    // get visuals
+                    Line[] l = canvas1.Children.OfType<Line>().ToArray();
 
-            // onset
-            check1.IsChecked = magnitudes.Sum() > 0;
-            check1.Content = "Onset: " + check1.IsChecked;
+                    // update each line according to pcm data
+                    for (int j = 0; j < 128; j++) {
+                        l[j].Y2 = d.pcm[j]; // NO OUTPUT
+                    }
 
-            // frequency
-            check2.Content = "Frequency: " + "?";
-
-            // Visuals
-            i = 0;
-
-            foreach (var c in canvas1.Children.OfType<Line>()) {
-                c.Y2 = 15 + window[i];
-
-                if (i < sampleSize - 1) {
-                    i++;
+                    // increment time
+                    milliseconds += 1;
+                    if (milliseconds == 10) { milliseconds = 0; seconds += 1; }
                 }
-            }
+            }));
         }
 
+
         private void band5_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (isPlaying) { stop(); }
+            if (active) { Toggle(null, null); }
         }
 
         private void band4_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (isPlaying) { stop(); }
+            if (active) { Toggle(null, null); }
         }
 
         private void band3_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (isPlaying) { stop(); }
+            if (active) { Toggle(null, null); }
         }
 
         private void band2_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (isPlaying) { stop(); }
+            if (active) { Toggle(null, null); }
         }
 
         private void band1_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (isPlaying) { stop(); }
+            if (active) { Toggle(null, null); }
         }
     }
 }
