@@ -10,7 +10,7 @@ using System.Windows.Threading;
 
 namespace Audio_visual_app {
     public partial class MainWindow : Window {
-        // file name
+        // file
         string filename = "";
 
         // active
@@ -19,11 +19,87 @@ namespace Audio_visual_app {
         // timing
         int seconds = 0;
         int milliseconds = 0;
+        int wait = 100;
         System.Timers.Timer timerGUI;
+
+        // quality
+        int quality = 10;
 
         // visuals
         int i;
         int linepos;
+
+        // loaded
+        bool loaded = false;
+
+        void setLoading() {
+            loaded = false;
+
+            // Loading
+            B1.IsEnabled = false;
+
+            check1.IsEnabled = false;
+            check1.IsChecked = false;
+
+            check1.Content = "Loading...";
+            check2.IsEnabled = false;
+            check2.IsChecked = false;
+
+            check2.Content = "Loading...";
+            check3.IsEnabled = false;
+            check3.IsChecked = false;
+
+            check3.Content = "Loading...";
+            slider1.IsEnabled = false;
+
+            band1.IsEnabled = false;
+            band2.IsEnabled = false;
+            band3.IsEnabled = false;
+            band4.IsEnabled = false;
+            band5.IsEnabled = false;
+
+            qslider.Maximum = 200; // 200 milliseconds : 5 data samples
+            qslider.Minimum = 20;  // 100 : 10
+                                   // 50 : 20
+                                   // 20 : 50
+
+            qslider.IsEnabled = true;
+            //qslider.IsEnabled = false;
+            qslider.IsMoveToPointEnabled = true;
+
+            // draw waveform
+            canvas1.Children.Clear();
+            canvas1.VerticalAlignment = VerticalAlignment.Bottom;
+            canvas1.HorizontalAlignment = HorizontalAlignment.Left;
+
+            for (int i = 0; i < LAVT.samplesize; i++) {
+                Line line = new Line();
+                line.StrokeThickness = 1;
+                line.Stroke = System.Windows.Media.Brushes.Black;
+                line.X1 = i;
+                line.X2 = i;
+                line.Y1 = 0;
+                line.Y2 = 15;
+                canvas1.Children.Add(line);
+            }
+        }
+
+        public void setQuality(int q) {
+            quality = q;
+            LAVT.setData(q);
+
+            wait = 1000 / q;
+            setTimer(wait);
+        }
+
+        public void setTimer(int ms) {
+            if (timerGUI != null) { timerGUI.Stop(); timerGUI = null; }
+            timerGUI = new System.Timers.Timer(ms);
+            timerGUI.Elapsed += UpdateGUI;
+            timerGUI.Enabled = true;
+            timerGUI.AutoReset = true;
+            timerGUI.Start();
+        }
 
         /// <summary>
         /// Initialise window
@@ -37,43 +113,11 @@ namespace Audio_visual_app {
 
             // If file exists
             if (filename != "") {
-                // LAVT (Loki's audio visual toolkit)
+                // set GUI to loading
+                setLoading();
+
+                // Intialise toolkit
                 LAVT.Initialise(filename);
-
-                // GUI
-                slider1.Maximum = LAVT.duration;
-
-                timerGUI = new System.Timers.Timer(100); // 0.1 second
-                timerGUI.Elapsed += UpdateGUI;
-                timerGUI.Enabled = true;
-                timerGUI.AutoReset = true;
-
-                // GUI (update these on a thread)
-                //check3.Content = "BPM: " + GetBPM();
-                check1.IsEnabled = false;
-                check1.IsChecked = false;
-                check2.IsEnabled = false;
-                check2.IsChecked = true;
-                check3.IsEnabled = false;
-                check3.IsChecked = true;
-                slider1.IsEnabled = false;
-
-                check3.Content = "BPM: " + LAVT.BPM;
-
-                // draw waveform
-                canvas1.VerticalAlignment = VerticalAlignment.Bottom;
-                canvas1.HorizontalAlignment = HorizontalAlignment.Left;
-
-                for (int i = 0; i < LAVT.samplesize; i++) {
-                    Line line = new Line();
-                    line.StrokeThickness = 1;
-                    line.Stroke = System.Windows.Media.Brushes.Black;
-                    line.X1 = i;
-                    line.X2 = i;
-                    line.Y1 = 0;
-                    line.Y2 = 15;
-                    canvas1.Children.Add(line);
-                }
             } else {
                 MessageBox.Show("No file selected.", "No file", MessageBoxButton.OK, MessageBoxImage.Warning);
                 LAVT.dump();
@@ -137,6 +181,27 @@ namespace Audio_visual_app {
             active = !active;
         }
 
+        void setLoaded() {
+            B1.IsEnabled = true;
+
+            check1.IsChecked = true;
+            check1.Content = "Loaded.";
+            check2.IsChecked = true;
+            check2.Content = "Loaded.";
+            check3.IsChecked = true;
+            check3.Content = "Loaded.";
+            band1.IsEnabled = true;
+            band2.IsEnabled = true;
+            band3.IsEnabled = true;
+            band4.IsEnabled = true;
+            band5.IsEnabled = true;
+
+            check3.Content = "BPM: " + LAVT.BPM;
+            slider1.Maximum = LAVT.duration;
+
+            qslider.IsEnabled = true;
+        }
+
         /// <summary>
         /// Update GUI
         /// </summary>
@@ -144,9 +209,21 @@ namespace Audio_visual_app {
         /// <param name="e"></param>
         private void UpdateGUI(object? sender, EventArgs e) {
             Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+
+            qslider.Value = quality;
+
+            // Load GUI
+            if (LAVT.analysed && !loaded) {
+                // Set GUI to loaded
+                setLoaded();
+                loaded = true;
+            }
+
+            // Loaded GUI
+            if (loaded) {
                 if (seconds < LAVT.duration && active) {
                     // Select data
-                    LAVT.data_struct d = LAVT.data[seconds][milliseconds];
+                    LAVT.data_struct d = LAVT.data[seconds][milliseconds / wait]; // ERROR
 
                     // use data
                     check1.IsChecked = d.onset;
@@ -162,19 +239,21 @@ namespace Audio_visual_app {
                     }
 
                     // Timing
-                    milliseconds += 1;
+                    milliseconds += wait;
 
-                    if (milliseconds == LAVT.datasize) { 
+                    if (milliseconds >= 1000 - wait) {
                         seconds += 1;
                         milliseconds = 0;
                     }
 
                     // GUI
                     slider1.Value = seconds;
-                    label1.Content = seconds + "." + milliseconds + " / " + LAVT.duration;
-                } else if (active) { 
-                    Toggle(null, null); 
+                    label1.Content = seconds + " (" + milliseconds + "ms / 1 second" + ") / " + LAVT.duration;
+                } else if (active) {
+                    Toggle(null, null);
                 }
+            }
+
             }));
         }
 
@@ -197,6 +276,22 @@ namespace Audio_visual_app {
 
         private void band1_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
             if (active) { Toggle(null, null); }
+        }
+
+        private void qualityvalue(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            // load
+            if (active) { Toggle(null, null); }
+            setLoading();
+
+            // set quality
+            var sl = sender as Slider;
+            quality = (int)sl.Value;
+            
+            Thread thread = new Thread(() => {
+                setQuality(quality);
+            });
+
+            thread.Start();
         }
     }
 }

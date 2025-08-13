@@ -281,5 +281,6 @@
         <Slider Name="band4" HorizontalAlignment="Left" Margin="90,212,0,0" VerticalAlignment="Top" Width="18" Orientation="Vertical" Height="181" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Maximum="30" IsMoveToPointEnabled="True" Minimum="-30" ValueChanged="band4_ValueChanged"/>
         <Slider Name="band5" HorizontalAlignment="Left" Margin="112,212,0,0" VerticalAlignment="Top" Width="18" Orientation="Vertical" Height="181" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Maximum="30" IsMoveToPointEnabled="True" Minimum="-30" ValueChanged="band5_ValueChanged"/>
         <CheckBox Name="check3" Content="BPM: 0" HorizontalAlignment="Left" Margin="25,98,0,0" VerticalAlignment="Top" Width="175"/>
+        <Slider Name="qslider" HorizontalAlignment="Left" Margin="200,55,0,0" VerticalAlignment="Top" Width="175" ValueChanged="qualityvalue" TickPlacement="BottomRight" TickFrequency="10" IsSnapToTickEnabled="True"/>
     </Grid>
 </Window>
