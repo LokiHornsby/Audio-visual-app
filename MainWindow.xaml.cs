@@ -19,11 +19,10 @@ namespace Audio_visual_app {
         // timing
         int seconds = 0;
         int milliseconds = 0;
-        int wait = 100;
         System.Timers.Timer timerGUI;
 
         // quality
-        int quality = 100;
+        int quality = 116;
 
         // visuals
         int i;
@@ -32,7 +31,6 @@ namespace Audio_visual_app {
         public void setInteract(bool x) {
             F1.IsEnabled = x;
             qslider.IsEnabled = x;
-            Pslider.IsEnabled = x;
             B1.IsEnabled = x;
 
             /*canvas1.Children.Clear();
@@ -69,11 +67,17 @@ namespace Audio_visual_app {
             InitializeComponent();
             loaded = true;
 
-            // setup GUI
+            // GUI
             setInteract(false);
-
             F1.IsEnabled = true;
-            
+            Pslider.IsEnabled = false;
+
+            // timer
+            timerGUI = new System.Timers.Timer(10);
+            timerGUI.Elapsed += UpdateGUI;
+            timerGUI.Enabled = true;
+            timerGUI.AutoReset = true;
+            timerGUI.Start();
         }
         
         void stop() {
@@ -129,7 +133,7 @@ namespace Audio_visual_app {
                 if (s.Length > 10) { s = s[..10] + "..."; }
                 button.Content = s;
                 Pslider.Maximum = LAVT.duration;
-
+                C3.Text = "BPM: " + LAVT.BPM;
 
                 // settings
                 qualityvalue(null, null);
@@ -164,12 +168,12 @@ namespace Audio_visual_app {
                 if (LAVT.analysed) {
                     if (seconds < LAVT.duration && active) {
                         // Select data
-                        LAVT.data_struct d = LAVT.data[seconds][(milliseconds / 1000) * quality]; // ERROR
+                        int pos = (int)Math.Round(((quality - 1) / 1000.0) * (double)milliseconds);
+                        LAVT.data_struct d = LAVT.data[seconds][pos];
 
                         // use data
-                        //check1.IsChecked = d.onset;
-                        //check1.Content = "Onset: " + check1.IsChecked;
-                        //check2.Content = "Frequency: " + d.frequency;
+                        C1.Text = "Onset: " + d.onset;
+                        C2.Text = "Frequency: " + d.frequency;
 
                         // get visuals
                         /*Line[] l = canvas1.Children.OfType<Line>().ToArray();
@@ -180,16 +184,16 @@ namespace Audio_visual_app {
                         }*/
 
                         // Timing
-                        milliseconds += wait;
+                        milliseconds += 10;
 
-                        if (milliseconds >= 1000 - wait) {
+                        if (milliseconds >= 1000) {
                             seconds += 1;
                             milliseconds = 0;
                         }
 
                         // GUI
                         Pslider.Value = seconds;
-                        T1.Text = seconds + " (" + milliseconds + "ms / 1 second" + ") / " + LAVT.duration;
+                        T1.Text = seconds + " (Chunk: " + (int)pos + " / " + quality + ") / " + LAVT.duration;
                     } else if (active) {
                         Toggle(null, null);
                     }
@@ -223,24 +227,12 @@ namespace Audio_visual_app {
                 // load
                 if (active) { Toggle(null, null); }
 
-                // GUI
+                setInteract(false);
+
+                // Quality
                 quality = (int)qslider.Value;
                 Q1.Text = "Quality: " + quality;
-
-                // THREAD GOES HERE
-
-                // quality
-                quality = quality;
-                LAVT.setData(quality);
-
-                // timer
-                wait = 1000 / quality;
-                if (timerGUI != null) { timerGUI.Stop(); timerGUI = null; }
-                timerGUI = new System.Timers.Timer(wait);
-                timerGUI.Elapsed += UpdateGUI;
-                timerGUI.Enabled = true;
-                timerGUI.AutoReset = true;
-                timerGUI.Start();
+                LAVT.setData(quality); // THREAD GOES HERE
 
                 setInteract(true);
             }

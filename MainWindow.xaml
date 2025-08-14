@@ -272,7 +272,10 @@
         <Button Name="B1" HorizontalAlignment="Left" Margin="68,102,0,0" VerticalAlignment="Top" Click="Toggle" Height="20" Width="32" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Content="Start"/>
         <Slider Name="qslider" HorizontalAlignment="Left" Margin="68,35,0,0" VerticalAlignment="Top" Width="264" ValueChanged="qualityvalue" IsMoveToPointEnabled="True" Maximum="200" Minimum="20" Value="20"/>
         <Button Name="F1" Content="Select File" VerticalAlignment="Top" Click="SelectFile" Height="20" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="156,10,0,0" HorizontalAlignment="Left" Width="88"/>
-        <TextBlock Name="Q1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,58,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Text="Quality: "/><Run Language="en-gb" Text="0"/><LineBreak/><Run/></TextBlock>
+        <TextBlock x:Name="Q1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,58,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Text="Quality: "/><Run Language="en-gb" Text="20"/><LineBreak/><Run/></TextBlock>
         <TextBlock Name="T1" TextAlignment="Right" HorizontalAlignment="Left" Margin="105,102,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="227" Height="20"><Run Language="en-gb" Text="Time"/></TextBlock>
+        <TextBlock Name="C1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,127,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Text="Onset: "/><Run Language="en-gb" Text="false"/></TextBlock>
+        <TextBlock Name="C2" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,148,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Language="en-gb" Text="Frequency: 0"/></TextBlock>
+        <TextBlock Name="C3" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,169,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Language="en-gb" Text="BPM: 0"/></TextBlock>
     </Grid>
 </Window>

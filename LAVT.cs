@@ -23,7 +23,7 @@ namespace Audio_visual_app {
         // raw data
         public static int duration;
         public static int samplesize = 64;
-        public static int datasize;
+        public static int chunksize;
         public static data_struct[][] data;
         public static double BPM;
         static WaveFormat format;
@@ -56,7 +56,7 @@ namespace Audio_visual_app {
                 analysed = false;
 
                 // data
-                datasize = size;
+                chunksize = size;
                 data = new data_struct[duration][];
 
                 for (int i = 0; i < data.Length; i++) {
