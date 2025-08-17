@@ -16,8 +16,6 @@ namespace Audio_visual_app {
     public static class LAVT { // Loki's audio visual toolkit
         // Audio
         static Mp3FileReader reader;
-        public static EqualizerBand[] bands;
-        public static Equalizer equalizer;
         static IWavePlayer player;
 
         // raw data
@@ -32,12 +30,25 @@ namespace Audio_visual_app {
 
         public struct data_struct {
             public double[] sample;
+            public double[] powers;
+            public double[] frequencies;
+            public double[] magnitudes;
             public bool onset;
             public double frequency;
 
             // constructor
-            public data_struct(double[] _sample, bool _onset, double _frequency) {
+            public data_struct(
+                double[] _sample,
+                double[] _powers,
+                double[] _frequencies,
+                double[] _magnitudes,
+                bool _onset, 
+                double _frequency) {
+
                 sample = _sample;
+                powers = _powers;
+                frequencies = _frequencies;
+                magnitudes = _magnitudes;
                 onset = _onset;
                 frequency = _frequency;
             }
@@ -104,6 +115,9 @@ namespace Audio_visual_app {
                         // Store data
                         data[i][j] = new data_struct(
                             sample,
+                            powers,
+                            frequencies,
+                            magnitudes,
                             powers.Sum() > 0,
                             frequencies[Array.IndexOf(powers, powers.Max())]
                         );
@@ -127,26 +141,9 @@ namespace Audio_visual_app {
             // audio
             reader = new Mp3FileReader(filename);
 
-            // equalizer
-            bands = new EqualizerBand[5];
-      
-            for (int i = 0; i < 5; i++) {
-                bands[i] = new EqualizerBand();
-                bands[i].Bandwidth = 0.5f;
-                bands[i].Gain = 0f;
-            }
-
-            bands[0].Frequency = 200;
-            bands[1].Frequency = 400;
-            bands[2].Frequency = 1200;
-            bands[3].Frequency = 4800;
-            bands[4].Frequency = 9600;
-
-            equalizer = new Equalizer(reader.ToSampleProvider(), bands);
-
             // player
             player = new WaveOutEvent();
-            player.Init(equalizer);
+            player.Init(reader);
 
             // calculations
             format = new WaveFormat(reader.WaveFormat.SampleRate, reader.WaveFormat.Channels);
@@ -156,6 +153,10 @@ namespace Audio_visual_app {
 
             // loaded
             initialised = true;
+        }
+
+        public static void seek(int s) {
+            reader.Position = drl * s;
         }
 
         /// <summary>
@@ -177,15 +178,13 @@ namespace Audio_visual_app {
         /// Stop the audio
         /// </summary>
         public static void StopPlayback() {
-            player.Stop();
-            reader.Position = 0;
+            player.Pause();
         }
 
         /// <summary>
         /// Start the audio
         /// </summary>
         public static void StartPlayback() {
-            reader.Position = 0;
             player.Play();
         }
     }

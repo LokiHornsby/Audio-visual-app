@@ -17,6 +17,7 @@ namespace Audio_visual_app {
         bool active = false;
 
         // timing
+        int refreshrate = 10;
         int seconds = 0;
         int milliseconds = 0;
         System.Timers.Timer timerGUI;
@@ -32,14 +33,10 @@ namespace Audio_visual_app {
             F1.IsEnabled = x;
             qslider.IsEnabled = x;
             B1.IsEnabled = x;
+            Rslider.IsEnabled = x;
+            Pslider.IsEnabled = x;
 
-            /*canvas1.Children.Clear();
-
-            band1.IsEnabled = x;
-            band2.IsEnabled = x;
-            band3.IsEnabled = x;
-            band4.IsEnabled = x;
-            band5.IsEnabled = x;
+            canvas1.Children.Clear();
 
             if (x) {
                 canvas1.VerticalAlignment = VerticalAlignment.Bottom;
@@ -55,7 +52,7 @@ namespace Audio_visual_app {
                     line.Y2 = 15;
                     canvas1.Children.Add(line);
                 }
-            }*/
+            }
         }
 
         /// <summary>
@@ -71,34 +68,16 @@ namespace Audio_visual_app {
             setInteract(false);
             F1.IsEnabled = true;
             Pslider.IsEnabled = false;
-
-            // timer
-            timerGUI = new System.Timers.Timer(10);
-            timerGUI.Elapsed += UpdateGUI;
-            timerGUI.Enabled = true;
-            timerGUI.AutoReset = true;
-            timerGUI.Start();
+            changerefreshrate(null, null);
         }
         
         void stop() {
             // stop
             LAVT.StopPlayback();
             B1.Content = "Start";
-
-            // reset
-            seconds = 0;
-            milliseconds = 0;
         }
 
         void start() {
-            // update
-            /*LAVT.bands[0].Gain = (int)band1.Value;
-            LAVT.bands[1].Gain = (int)band2.Value;
-            LAVT.bands[2].Gain = (int)band3.Value;
-            LAVT.bands[3].Gain = (int)band4.Value;
-            LAVT.bands[4].Gain = (int)band5.Value;
-            LAVT.equalizer.Update();*/
-
             // GUI
             B1.Content = "Stop";
 
@@ -176,15 +155,20 @@ namespace Audio_visual_app {
                         C2.Text = "Frequency: " + d.frequency;
 
                         // get visuals
-                        /*Line[] l = canvas1.Children.OfType<Line>().ToArray();
+                        Line[] l = canvas1.Children.OfType<Line>().ToArray();
 
-                        // update each line according to pcm data
-                        for (int j = 0; j < LAVT.samplesize; j++) {
-                            l[j].Y2 = d.sample[j];
-                        }*/
+                        // update each line
+                        double[] x = d.magnitudes;
+                        double max = x.Max();
+
+                        for (int j = 0; j < x.Length; j++) {
+                            var val = (x[j] / max) * 100;
+                            if (!Double.IsNormal(val)) { val = 0; }
+                            l[j / 2].Y2 = val;
+                        }
 
                         // Timing
-                        milliseconds += 10;
+                        milliseconds += refreshrate;
 
                         if (milliseconds >= 1000) {
                             seconds += 1;
@@ -195,6 +179,8 @@ namespace Audio_visual_app {
                         Pslider.Value = seconds;
                         T1.Text = seconds + " (Chunk: " + (int)pos + " / " + quality + ") / " + LAVT.duration;
                     } else if (active) {
+                        seconds = 0;
+                        milliseconds = 0;
                         Toggle(null, null);
                     }
                 }
@@ -235,6 +221,33 @@ namespace Audio_visual_app {
                 LAVT.setData(quality); // THREAD GOES HERE
 
                 setInteract(true);
+            }
+        }
+
+        private void changerefreshrate(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            if (loaded) {
+                // GUI
+                refreshrate = (int)Rslider.Value;
+                R1.Text = "Refresh rate: " + refreshrate;
+
+                // timer
+                if (timerGUI != null) { timerGUI.Stop(); timerGUI = null; }
+                timerGUI = new System.Timers.Timer(refreshrate);
+                timerGUI.Elapsed += UpdateGUI;
+                timerGUI.Enabled = true;
+                timerGUI.AutoReset = true;
+                timerGUI.Start();
+            }
+        }
+
+        private void Pslider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            if (loaded) {
+                if (seconds != (int)Pslider.Value) {
+                    seconds = (int)Pslider.Value;
+                    milliseconds = 0;
+                    LAVT.seek(seconds);
+                    T1.Text = "Seeked to " + seconds + " / " + LAVT.duration;
+                }
             }
         }
     }
