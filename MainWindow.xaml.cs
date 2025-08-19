@@ -1,6 +1,7 @@
 ﻿using NAudio.Extras;
 using NAudio.Gui;
 using NAudio.Wave;
+using System;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -23,41 +24,11 @@ namespace Audio_visual_app {
         System.Timers.Timer timerGUI;
 
         // quality
-        int quality = 116;
+        int quality = 20;
 
-        // visuals
-        int i;
-        int linepos;
+        // sensitivity
+        int sensitivity = 0;
 
-        public void setInteract(bool x) {
-            F1.IsEnabled = x;
-            qslider.IsEnabled = x;
-            B1.IsEnabled = x;
-            Rslider.IsEnabled = x;
-            Pslider.IsEnabled = x;
-
-            canvas1.Children.Clear();
-
-            if (x) {
-                canvas1.VerticalAlignment = VerticalAlignment.Bottom;
-                canvas1.HorizontalAlignment = HorizontalAlignment.Left;
-
-                for (int i = 0; i < LAVT.samplesize; i++) {
-                    Line line = new Line();
-                    line.StrokeThickness = 1;
-                    line.Stroke = System.Windows.Media.Brushes.Black;
-                    line.X1 = i;
-                    line.X2 = i;
-                    line.Y1 = 0;
-                    line.Y2 = 15;
-                    canvas1.Children.Add(line);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Initialise window
-        /// </summary>
         public MainWindow() {
             // init
             loaded = false;
@@ -67,80 +38,167 @@ namespace Audio_visual_app {
             // GUI
             setInteract(false);
             F1.IsEnabled = true;
-            Pslider.IsEnabled = false;
-            changerefreshrate(null, null);
-        }
-        
-        void stop() {
-            // stop
-            LAVT.StopPlayback();
-            B1.Content = "Start";
         }
 
-        void start() {
-            // GUI
-            B1.Content = "Stop";
+        public void setInteract(bool x) {
+            F1.IsEnabled = x;
+            qslider.IsEnabled = x;
+            Rslider.IsEnabled = x;
+            Sslider.IsEnabled = x;
+            CH1.IsEnabled = x;
+            Tslider.IsEnabled = x;
+            B1.IsEnabled = x;
+            B2.IsEnabled = x;
 
-            // start
-            LAVT.StartPlayback();
+            canvas1.Children.Clear();
+        }
+
+        string? getFile(string filter) {
+            // Configure
+            var dialog = new Microsoft.Win32.OpenFileDialog();
+            dialog.Filter = filter; // Filter files by extension
+
+            // Show
+            Nullable<bool> result = dialog.ShowDialog();
+
+            if (result.Value) {
+                return dialog.FileName;
+            } else {
+                return null;
+            }
         }
 
         private void SelectFile(object sender, RoutedEventArgs e) {
             if (active) { Toggle(null, null); }
 
-            // Configure
-            var dialog = new Microsoft.Win32.OpenFileDialog();
-            dialog.Filter = "Audio files|*.mp3"; // Filter files by extension
-
-            // Show
-            dialog.ShowDialog();
-
-            // file
-            string filename = dialog.FileName;
+            string s = getFile("Audio files|*.mp3");
 
             // If file exists
-            if (filename.Length > 0) {
-                // THREAD GOES HERE
-
+            if (s != null) {
                 // Intialise toolkit
                 LAVT.dump();
-                LAVT.Initialise(filename);
+                LAVT.Initialise(s);
 
                 // GUI
                 var button = sender as Button;
-                var s = System.IO.Path.GetFileName(filename);
+                s = System.IO.Path.GetFileName(s);
                 if (s.Length > 10) { s = s[..10] + "..."; }
                 button.Content = s;
-                Pslider.Maximum = LAVT.duration;
+                Tslider.Maximum = LAVT.duration;
                 C3.Text = "BPM: " + LAVT.BPM;
 
-                // settings
-                qualityvalue(null, null);
-            } else {
-                MessageBox.Show("No file selected.", "No file", MessageBoxButton.OK, MessageBoxImage.Warning);
+                canvas1.VerticalAlignment = VerticalAlignment.Bottom;
+                canvas1.HorizontalAlignment = HorizontalAlignment.Left;
+
+                applychanges(null, null);
             }
         }
 
-        /// <summary>
-        /// Toggle playback state
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        private void changequality(object sender, RoutedPropertyChangedEventArgs<double> e) { // ERROR
+            if (loaded) {
+                // load
+                if (active) { Toggle(null, null); }
+
+                // Quality
+                quality = (int)qslider.Value;
+                Q1.Text = "Quality: " + quality;
+                CH1.IsEnabled = true;
+            }
+        }
+
+        private void changerefreshrate(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            if (loaded) {
+                if (active) { Toggle(null, null); }
+
+                // GUI
+                refreshrate = (int)Rslider.Value;
+                R1.Text = "Refresh rate: " + refreshrate;
+                CH1.IsEnabled = true;
+            }
+        }
+
+        private void changesensitivity(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            if (loaded) {
+                if (active) { Toggle(null, null); }
+
+                sensitivity = (int)Sslider.Value;
+                S1.Text = "Sensitivity: " + sensitivity;
+                CH1.IsEnabled = true;
+            }
+        }
+
+        private void applychanges(object sender, RoutedEventArgs e) {
+            if (loaded) {
+                if (active) { Toggle(null, null); }
+
+                // interact
+                setInteract(false);
+
+                // timer
+                if (timerGUI != null) { timerGUI.Stop(); timerGUI = null; }
+                timerGUI = new System.Timers.Timer(refreshrate);
+                timerGUI.Elapsed += UpdateGUI;
+                timerGUI.Enabled = true;
+                timerGUI.AutoReset = true;
+                timerGUI.Start();
+
+                // data
+                CH1.Dispatcher.InvokeAsync(() => {
+                    LAVT.setData(quality, sensitivity);
+
+                    setInteract(true);
+                    CH1.IsEnabled = false;
+
+                    for (int i = 0; i < LAVT.data[0][0].magnitudes.Length; i++) {
+                        Line line = new Line();
+                        line.StrokeThickness = 1;
+                        line.Stroke = System.Windows.Media.Brushes.Black;
+                        line.X1 = canvas1.ActualWidth / 2 + i;
+                        line.X2 = canvas1.ActualWidth / 2 + i;
+                        line.Y1 = 0;
+                        line.Y2 = 15;
+                        canvas1.Children.Add(line);
+                    }
+                }, DispatcherPriority.SystemIdle);
+            }
+        }
+
+        private void changetime(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            if (loaded) {
+                if (seconds != (int)Tslider.Value) {
+                    seconds = (int)Tslider.Value;
+                    milliseconds = 0;
+                    LAVT.seek(seconds);
+                    T1.Text = "Seeked to " + seconds + " / " + LAVT.duration;
+                }
+            }
+        }
+
         private void Toggle(object sender, RoutedEventArgs e) {
             if (!active) {
-                start();
+                // start
+                B1.Content = "Pause";
+                LAVT.StartPlayback();
             } else {
-                stop();
+                // pause
+                LAVT.PausePlayback();
+                B1.Content = "Start";
             }
 
             active = !active;
         }
 
-        /// <summary>
-        /// Update GUI
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        private void stop(object sender, RoutedEventArgs e) {
+            if (loaded) {
+                if (active) { Toggle(null, null); }
+                seconds = 0;
+                milliseconds = 0;
+                LAVT.StopPlayback();
+                Tslider.Value = 0;
+                T1.Text = "Stopped";
+            }
+        }
+
         private void UpdateGUI(object? sender, EventArgs e) {
             Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
                 // Loaded GUI
@@ -165,6 +223,11 @@ namespace Audio_visual_app {
                             var val = (x[j] / max) * 100;
                             if (!Double.IsNormal(val)) { val = 0; }
                             l[j / 2].Y2 = val;
+                            if (d.onset) {
+                                l[j / 2].Stroke = System.Windows.Media.Brushes.Green;
+                            } else {
+                                l[j / 2].Stroke = System.Windows.Media.Brushes.Black;
+                            }
                         }
 
                         // Timing
@@ -176,7 +239,6 @@ namespace Audio_visual_app {
                         }
 
                         // GUI
-                        Pslider.Value = seconds;
                         T1.Text = seconds + " (Chunk: " + (int)pos + " / " + quality + ") / " + LAVT.duration;
                     } else if (active) {
                         seconds = 0;
@@ -184,71 +246,9 @@ namespace Audio_visual_app {
                         Toggle(null, null);
                     }
                 }
+
+            Tslider.Value = seconds;
             }));
-        }
-
-
-        private void band5_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (active) { Toggle(null, null); }
-        }
-
-        private void band4_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (active) { Toggle(null, null); }
-        }
-
-        private void band3_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (active) { Toggle(null, null); }
-        }
-
-        private void band2_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (active) { Toggle(null, null); }
-        }
-
-        private void band1_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (active) { Toggle(null, null); }
-        }
-
-        private void qualityvalue(object sender, RoutedPropertyChangedEventArgs<double> e) { // ERROR
-            if (loaded) {
-                // load
-                if (active) { Toggle(null, null); }
-
-                setInteract(false);
-
-                // Quality
-                quality = (int)qslider.Value;
-                Q1.Text = "Quality: " + quality;
-                LAVT.setData(quality); // THREAD GOES HERE
-
-                setInteract(true);
-            }
-        }
-
-        private void changerefreshrate(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (loaded) {
-                // GUI
-                refreshrate = (int)Rslider.Value;
-                R1.Text = "Refresh rate: " + refreshrate;
-
-                // timer
-                if (timerGUI != null) { timerGUI.Stop(); timerGUI = null; }
-                timerGUI = new System.Timers.Timer(refreshrate);
-                timerGUI.Elapsed += UpdateGUI;
-                timerGUI.Enabled = true;
-                timerGUI.AutoReset = true;
-                timerGUI.Start();
-            }
-        }
-
-        private void Pslider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            if (loaded) {
-                if (seconds != (int)Pslider.Value) {
-                    seconds = (int)Pslider.Value;
-                    milliseconds = 0;
-                    LAVT.seek(seconds);
-                    T1.Text = "Seeked to " + seconds + " / " + LAVT.duration;
-                }
-            }
         }
     }
 }

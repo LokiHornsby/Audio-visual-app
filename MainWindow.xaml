@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Audio_visual_app"
         xmlns:Wave="clr-namespace:NAudio.Wave;assembly=NAudio.Asio" x:Class="Audio_visual_app.MainWindow"
         mc:Ignorable="d"
-        Title="LAVT" Height="421" Width="400">
+        Title="LAVT" Height="458" Width="400">
     <Window.Resources>
         <Style x:Key="RepeatButtonTransparent" TargetType="{x:Type RepeatButton}">
             <Setter Property="OverridesDefaultStyle" Value="true"/>
@@ -268,17 +268,21 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <Slider Name="Pslider" Style="{DynamicResource SliderStyle1}" IsMoveToPointEnabled="True" HorizontalAlignment="Left" Margin="68,103,0,0" VerticalAlignment="Top" Width="264" Maximum="100" Height="18" Delay="0" Minimum="1" ValueChanged="Pslider_ValueChanged"/>
-        <Button Name="B1" HorizontalAlignment="Left" Margin="68,142,0,0" VerticalAlignment="Top" Click="Toggle" Height="20" Width="264" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Content="Start"/>
-        <Slider Name="qslider" HorizontalAlignment="Left" Margin="68,35,0,0" VerticalAlignment="Top" Width="264" ValueChanged="qualityvalue" IsMoveToPointEnabled="True" Maximum="200" Minimum="20" Value="20"/>
-        <Button Name="F1" Content="Select File" VerticalAlignment="Top" Click="SelectFile" Height="20" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="156,10,0,0" HorizontalAlignment="Left" Width="88"/>
+        <Button Name="F1" Content="Select File" VerticalAlignment="Top" Click="SelectFile" Height="20" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="68,10,0,0" HorizontalAlignment="Left" Width="264"/>
+        <Slider Name="qslider" HorizontalAlignment="Left" Margin="68,35,0,0" VerticalAlignment="Top" Width="264" ValueChanged="changequality" IsMoveToPointEnabled="True" Maximum="200" Minimum="20" Value="20"/>
         <TextBlock Name="Q1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,53,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Text="Quality: "/><Run Language="en-gb" Text="20"/><LineBreak/><Run/></TextBlock>
-        <TextBlock Name="T1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,121,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="15"><Run Language="en-gb" Text="Time"/></TextBlock>
-        <TextBlock Name="C1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,170,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Text="Onset: "/><Run Language="en-gb" Text="false"/></TextBlock>
-        <TextBlock Name="C2" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,186,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Language="en-gb" Text="Frequency: 0"/></TextBlock>
-        <TextBlock Name="C3" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,202,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Language="en-gb" Text="BPM: 0"/></TextBlock>
-        <Canvas Name="canvas1" Margin="68,218,0,121"/>
         <Slider x:Name="Rslider" Style="{DynamicResource SliderStyle1}" IsMoveToPointEnabled="True" HorizontalAlignment="Left" Margin="68,69,0,0" VerticalAlignment="Top" Width="264" Maximum="200" Height="18" Delay="0" ValueChanged="changerefreshrate" Value="10" Minimum="10"/>
-        <TextBlock x:Name="R1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,87,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Language="en-gb" Text="Refresh rate: 10"/></TextBlock>
+        <TextBlock Name="R1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,87,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Language="en-gb" Text="Refresh rate: 10"/></TextBlock>
+        <Slider Name="Sslider" HorizontalAlignment="Left" Margin="68,103,0,0" VerticalAlignment="Top" Width="264" Maximum="100" ValueChanged="changesensitivity" IsMoveToPointEnabled="True"/>
+        <TextBlock Name="S1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,121,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Language="en-gb" Text="Sensitivity: 0"/></TextBlock>
+        <Button Name="CH1" Content="Apply changes" HorizontalAlignment="Left" Margin="68,142,0,0" VerticalAlignment="Top" Width="264" Click="applychanges"/>
+        <Slider x:Name="Tslider" Style="{DynamicResource SliderStyle1}" IsMoveToPointEnabled="True" HorizontalAlignment="Left" Margin="68,167,0,0" VerticalAlignment="Top" Width="264" Maximum="100" Height="18" Delay="0" Minimum="1" ValueChanged="changetime"/>
+        <TextBlock Name="T1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,185,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="15"><Run Language="en-gb" Text="Time"/></TextBlock>
+        <Button Name="B1" HorizontalAlignment="Left" Margin="68,206,0,0" VerticalAlignment="Top" Click="Toggle" Height="20" Width="132" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Content="Start"/>
+        <Button Name="B2" HorizontalAlignment="Left" Margin="200,206,0,0" VerticalAlignment="Top" Height="20" Width="132" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Content="Stop" Click="stop"/>
+        <TextBlock Name="C1" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,231,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Text="Onset: "/><Run Language="en-gb" Text="false"/></TextBlock>
+        <TextBlock Name="C2" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,247,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Language="en-gb" Text="Frequency: 0"/></TextBlock>
+        <TextBlock Name="C3" TextAlignment="Center" HorizontalAlignment="Left" Margin="68,263,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="264" Height="16"><Run Language="en-gb" Text="BPM: 0"/></TextBlock>
+        <Canvas Name="canvas1" Margin="68,279,0,32"/>
     </Grid>
 </Window>

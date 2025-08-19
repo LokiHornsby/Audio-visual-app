@@ -58,11 +58,7 @@ namespace Audio_visual_app {
         public static bool initialised = false;
         public static bool analysed = false;
 
-        /// <summary>
-        /// Get data
-        /// </summary>
-        /// <param name="size"></param>
-        public static void setData(int size) {
+        public static void setData(int size, int sensitivity) {
             if (initialised) {
                 analysed = false;
 
@@ -118,7 +114,7 @@ namespace Audio_visual_app {
                             powers,
                             frequencies,
                             magnitudes,
-                            powers.Sum() > 0,
+                            powers.Sum() > sensitivity,
                             frequencies[Array.IndexOf(powers, powers.Max())]
                         );
 
@@ -131,10 +127,6 @@ namespace Audio_visual_app {
             }
         }
 
-        /// <summary>
-        /// Initialise LAVT (Loki's audio visual toolkit)
-        /// </summary>
-        /// <param name="filename"></param>
         public static void Initialise(string filename) {
             initialised = false;
 
@@ -155,13 +147,6 @@ namespace Audio_visual_app {
             initialised = true;
         }
 
-        public static void seek(int s) {
-            reader.Position = drl * s;
-        }
-
-        /// <summary>
-        /// Dump audio variables
-        /// </summary>
         public static void dump() {
             if (player != null) {
                 player.Dispose();
@@ -174,16 +159,19 @@ namespace Audio_visual_app {
             }
         }
 
-        /// <summary>
-        /// Stop the audio
-        /// </summary>
+        public static void seek(int s) {
+            reader.Position = drl * s;
+        }
+
         public static void StopPlayback() {
+            player.Stop();
+            reader.Position = 0;
+        }
+
+        public static void PausePlayback() {
             player.Pause();
         }
 
-        /// <summary>
-        /// Start the audio
-        /// </summary>
         public static void StartPlayback() {
             player.Play();
         }
