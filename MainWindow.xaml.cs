@@ -1,5 +1,4 @@
-﻿using NAudio.Extras;
-using NAudio.Gui;
+﻿using NAudio.Gui;
 using NAudio.Wave;
 using System;
 using System.IO;
@@ -10,6 +9,12 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace Audio_visual_app {
+    public static class Data {
+        static LAVT.data_struct GetData(MainWindow m) {
+            return LAVT.data[m.seconds][m.pos];
+        }
+    }
+
     public partial class MainWindow : Window {
         // load
         bool loaded;
@@ -19,7 +24,8 @@ namespace Audio_visual_app {
 
         // timing
         int refreshrate = 10;
-        int seconds = 0;
+        public int seconds = 0;
+        public int pos;
         int milliseconds = 0;
         System.Timers.Timer timerGUI;
 
@@ -29,7 +35,7 @@ namespace Audio_visual_app {
         // sensitivity
         int sensitivity = 0;
 
-        public MainWindow() {
+        void startup() {
             // init
             loaded = false;
             InitializeComponent();
@@ -38,6 +44,10 @@ namespace Audio_visual_app {
             // GUI
             setInteract(false);
             F1.IsEnabled = true;
+        }
+
+        public MainWindow() {
+            startup();
         }
 
         public void setInteract(bool x) {
@@ -205,7 +215,7 @@ namespace Audio_visual_app {
                 if (LAVT.analysed) {
                     if (seconds < LAVT.duration && active) {
                         // Select data
-                        int pos = (int)Math.Round(((quality - 1) / 1000.0) * (double)milliseconds);
+                        pos = (int)Math.Round(((quality - 1) / 1000.0) * (double)milliseconds);
                         LAVT.data_struct d = LAVT.data[seconds][pos];
 
                         // use data

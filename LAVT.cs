@@ -1,5 +1,4 @@
 using FftSharp;
-using NAudio.Extras;
 using NAudio.Wave;
 using NAudio.Wave.Compression;
 using System;
