@@ -122,6 +122,7 @@ namespace Audio_visual_app {
                     }
                 }
 
+                reader.Position = 0;
                 analysed = true;
             }
         }

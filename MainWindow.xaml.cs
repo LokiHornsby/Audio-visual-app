@@ -16,6 +16,9 @@ namespace Audio_visual_app {
     }
 
     public partial class MainWindow : Window {
+        // file
+        string file;
+
         // load
         bool loaded;
 
@@ -35,7 +38,7 @@ namespace Audio_visual_app {
         // sensitivity
         int sensitivity = 0;
 
-        void startup() {
+        public MainWindow() {
             // init
             loaded = false;
             InitializeComponent();
@@ -46,21 +49,15 @@ namespace Audio_visual_app {
             F1.IsEnabled = true;
         }
 
-        public MainWindow() {
-            startup();
-        }
-
         public void setInteract(bool x) {
             F1.IsEnabled = x;
-            qslider.IsEnabled = x;
+            Qslider.IsEnabled = x;
             Rslider.IsEnabled = x;
             Sslider.IsEnabled = x;
             CH1.IsEnabled = x;
             Tslider.IsEnabled = x;
             B1.IsEnabled = x;
             B2.IsEnabled = x;
-
-            canvas1.Children.Clear();
         }
 
         string? getFile(string filter) {
@@ -78,30 +75,39 @@ namespace Audio_visual_app {
             }
         }
 
-        private void SelectFile(object sender, RoutedEventArgs e) {
+        private async void SelectFile(object sender, RoutedEventArgs e) {
             if (active) { Toggle(null, null); }
 
-            string s = getFile("Audio files|*.mp3");
+            setInteract(false);
 
-            // If file exists
-            if (s != null) {
-                // Intialise toolkit
-                LAVT.dump();
-                LAVT.Initialise(s);
+            await Task.Run(new Action(() => {
 
+                file = getFile("Audio files|*.mp3");
+
+                // If file exists
+                if (file != null) {
+                    // Intialise toolkit
+                    LAVT.dump();
+                    LAVT.Initialise(file);
+                }
+            })).ContinueWith((result) => {
                 // GUI
                 var button = sender as Button;
-                s = System.IO.Path.GetFileName(s);
+                var s = System.IO.Path.GetFileName(file);
                 if (s.Length > 10) { s = s[..10] + "..."; }
                 button.Content = s;
                 Tslider.Maximum = LAVT.duration;
                 C3.Text = "BPM: " + LAVT.BPM;
+                Tslider.Value = 0;
 
-                canvas1.VerticalAlignment = VerticalAlignment.Bottom;
-                canvas1.HorizontalAlignment = HorizontalAlignment.Left;
-
-                applychanges(null, null);
-            }
+                // changes
+                seconds = 0;
+                milliseconds = 0;
+                Qslider.IsEnabled = true;
+                Rslider.IsEnabled = true;
+                Sslider.IsEnabled = true;
+                CH1.IsEnabled = true;
+            }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void changequality(object sender, RoutedPropertyChangedEventArgs<double> e) { // ERROR
@@ -110,7 +116,7 @@ namespace Audio_visual_app {
                 if (active) { Toggle(null, null); }
 
                 // Quality
-                quality = (int)qslider.Value;
+                quality = (int)Qslider.Value;
                 Q1.Text = "Quality: " + quality;
                 CH1.IsEnabled = true;
             }
@@ -137,39 +143,43 @@ namespace Audio_visual_app {
             }
         }
 
-        private void applychanges(object sender, RoutedEventArgs e) {
+        private async void applychanges(object sender, RoutedEventArgs e) {
             if (loaded) {
                 if (active) { Toggle(null, null); }
 
                 // interact
                 setInteract(false);
+                CH1.Content = "Loading...";
 
-                // timer
-                if (timerGUI != null) { timerGUI.Stop(); timerGUI = null; }
-                timerGUI = new System.Timers.Timer(refreshrate);
-                timerGUI.Elapsed += UpdateGUI;
-                timerGUI.Enabled = true;
-                timerGUI.AutoReset = true;
-                timerGUI.Start();
+                await Task.Run(new Action(() => LAVT.setData(quality, sensitivity))).ContinueWith((result) => {
+                    canvas1.Children.Clear();
 
-                // data
-                CH1.Dispatcher.InvokeAsync(() => {
-                    LAVT.setData(quality, sensitivity);
-
-                    setInteract(true);
-                    CH1.IsEnabled = false;
+                    int w = (int)((canvas1.ActualWidth / 2) - (LAVT.data[0][0].magnitudes.Length / 2));
 
                     for (int i = 0; i < LAVT.data[0][0].magnitudes.Length; i++) {
                         Line line = new Line();
                         line.StrokeThickness = 1;
                         line.Stroke = System.Windows.Media.Brushes.Black;
-                        line.X1 = canvas1.ActualWidth / 2 + i;
-                        line.X2 = canvas1.ActualWidth / 2 + i;
+                        line.X1 = w + i;
+                        line.X2 = w + i;
                         line.Y1 = 0;
-                        line.Y2 = 15;
+                        line.Y2 = 0;
                         canvas1.Children.Add(line);
                     }
-                }, DispatcherPriority.SystemIdle);
+
+                    // timer
+                    if (timerGUI != null) { timerGUI.Stop(); timerGUI = null; }
+                    timerGUI = new System.Timers.Timer(refreshrate);
+                    timerGUI.Elapsed += UpdateGUI;
+                    timerGUI.Enabled = true;
+                    timerGUI.AutoReset = true;
+
+                    setInteract(true);
+                    CH1.Content = "Apply changes";
+
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+
+                CH1.IsEnabled = false;
             }
         }
 
@@ -185,17 +195,21 @@ namespace Audio_visual_app {
         }
 
         private void Toggle(object sender, RoutedEventArgs e) {
-            if (!active) {
-                // start
-                B1.Content = "Pause";
-                LAVT.StartPlayback();
-            } else {
-                // pause
-                LAVT.PausePlayback();
-                B1.Content = "Start";
-            }
+            if (loaded) {
+                if (!active) {
+                    // start
+                    LAVT.StartPlayback();
+                    timerGUI.Start();
+                    B1.Content = "Pause";
+                } else {
+                    // pause
+                    LAVT.PausePlayback();
+                    timerGUI.Stop();
+                    B1.Content = "Start";
+                }
 
-            active = !active;
+                active = !active;
+            }
         }
 
         private void stop(object sender, RoutedEventArgs e) {
@@ -210,8 +224,8 @@ namespace Audio_visual_app {
         }
 
         private void UpdateGUI(object? sender, EventArgs e) {
-            Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                // Loaded GUI
+            // Loaded GUI
+            Dispatcher.Invoke(() => {
                 if (LAVT.analysed) {
                     if (seconds < LAVT.duration && active) {
                         // Select data
@@ -250,15 +264,14 @@ namespace Audio_visual_app {
 
                         // GUI
                         T1.Text = seconds + " (Chunk: " + (int)pos + " / " + quality + ") / " + LAVT.duration;
+                        Tslider.Value = seconds;
                     } else if (active) {
                         seconds = 0;
                         milliseconds = 0;
                         Toggle(null, null);
                     }
                 }
-
-            Tslider.Value = seconds;
-            }));
+            });
         }
     }
 }
